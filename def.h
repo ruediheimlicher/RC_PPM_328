@@ -64,6 +64,7 @@
 #define SUB_START_BIT       1 // Slave kann starten
 #define SUB_END_BIT         2 // Slave ist fertig
 
+#define ALARM_PIN         7 // toggle Alarm
 #define ALARM_BIT         7 // toggle Alarm
 
 #define SUB_TASK_BIT         3 // Slave hat Aufgaben
@@ -84,6 +85,15 @@
 #define ADC_PORT            PORTC   //
 #define ADC_DDR             DDRC    //    
 #define ADC_PIN             PINC    //    
+#define ADC_0               0 // Kanal fuer Batteriespannung
+
+#define KANAL_PORT            PORTC   //    Ausgang Summensignal 
+#define KANAL_DDR             DDRC    //    
+
+
+#define KANAL_PIN          2                             // Ausgang fuer Summensignal
+#define KANAL_LO           KANAL_PORT &= ~(1<<KANAL_PIN)
+#define KANAL_HI           KANAL_PORT |= (1<<KANAL_PIN)
 
 
 // Bit
@@ -93,3 +103,30 @@
 #define EE_WREN   0
 #define EE_WRITE  1
 #define EE_READ   2
+
+
+// Bit
+
+#define ADC_START 0  //    Start Messung Batteriespannung mit internem ADC
+
+#define POT_START 0  //    Start Messung Potentiometer
+
+#define SPI_START 2  //    Start SPI auf diesem device
+
+#define SPI_END   3  //    End SPI auf diesem device
+
+#define POT_MITTE 7  //    Mittelwerte der Potentiometer speichern
+
+#define ANZ_POT   6
+
+#define POT_FAKTOR 0.6
+
+
+#define TASTENDDR           DDRD
+#define TASTENPORT          PORTD
+#define TASTENPIN           PIND
+
+#define TASTE0				   0
+#define TASTE1             1
+
+

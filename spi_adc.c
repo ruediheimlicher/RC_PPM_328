@@ -30,7 +30,10 @@ void MCP3208_spi_Init(void)
    // Setup (Falling) Sample (Rising) SPI set mode 3
    // CPOL=1 : CPHA=1
    SPCR=0;
-   SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR1)|(0<<SPR0)|(1<<CPOL)|(1<<CPHA);
+   SPCR = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<CPHA);
+   SPCR |= (1<<SPR0);
+   //SPCR |= (1<<SPR1);
+   
    SPI_PORT |= (1<<(SPI_SS_PIN));    //setbitHigh CS   Pin
    SPI_PORT |= (1<<(SPI_MOSI_PIN));  //setbitHigh MOSI Pin
    SPI_PORT |= (1<<(SPI_MISO_PIN));  //setbitHigh MOSI Pin
@@ -49,6 +52,7 @@ unsigned char MCP3208_spiWrite(char cData)
 
 unsigned int MCP3208_spiRead(unsigned char AD_type,unsigned char ADchanel)
 {
+   //OSZI_A_LO ;
    unsigned char  tempHigh,tempLow,tempADtype,dummyData;
    
    SPI_PORT &= ~(1<<(SPI_SS_PIN));     //setbitLow CS  Pin

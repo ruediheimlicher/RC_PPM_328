@@ -12,10 +12,10 @@
  Copyright (C) 2011 David DiPaola
  
  ***/
-#define SPI_RAM_DDR            DDRB    //DDR B
-#define SPI_RAM_PORT           PORTB   //PORT B
+#define SPI_RAM_DDR            DDRB    
+#define SPI_RAM_PORT           PORTB   
 
-#define SPI_RAM_CS_PIN                         2
+#define SPI_RAM_CS_PIN                         1
 
 
 #define RAM_CS_HI SPI_RAM_PORT |= (1<<SPI_RAM_CS_PIN)

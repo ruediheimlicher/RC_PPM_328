@@ -6,6 +6,25 @@
  *  Copyright 2007 __MyCompanyName__. All rights reserved.
  *
  */
+
+static uint8_t aref = (1<<REFS0); // default to AREF = Vcc
+
+
+// These prescaler values are for high speed mode, ADHSM = 1
+#if F_CPU == 16000000L
+#define ADC_PRESCALER ((1<<ADPS2) | (1<<ADPS1))
+#elif F_CPU == 8000000L
+#define ADC_PRESCALER ((1<<ADPS2) | (1<<ADPS0))
+#elif F_CPU == 4000000L
+#define ADC_PRESCALER ((1<<ADPS2))
+#elif F_CPU == 2000000L
+#define ADC_PRESCALER ((1<<ADPS1) | (1<<ADPS0))
+#elif F_CPU == 1000000L
+#define ADC_PRESCALER ((1<<ADPS1))
+#else
+#define ADC_PRESCALER ((1<<ADPS0))
+#endif
+
 struct adcwert16 {
   uint8_t wertH;
   uint8_t wertL;

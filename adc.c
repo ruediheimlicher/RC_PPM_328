@@ -92,6 +92,20 @@ uint16_t readKanal(uint8_t derKanal) //Unsere Funktion zum ADC-Channel aus lesen
   return result;
 }
 
+
+int16_t adc_read(uint8_t derKanal)
+{
+   uint8_t low;
+   
+   ADCSRA = (1<<ADEN) | ADC_PRESCALER;             // enable ADC
+   ADMUX = aref | (derKanal & 0x1F);                    // configure mux input
+   ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS0) | (1<<ADSC); // start the conversion
+   while (ADCSRA & (1<<ADSC)) ;                    // wait for result
+   low = ADCL;                                     // must read LSB first
+   return (ADCH << 8) | low;                       // must read MSB only once!
+}
+
+
 void closeADC()
 {
 ADCSRA &= ~(1<<ADEN);             // ADC deaktivieren ("Enable-Bit" auf LOW setzen)
