@@ -73,6 +73,7 @@
 
 
 #define SUB_BUSY_PIN          6 // Sub ist busy
+#define SUB_BUSY_BIT          6 // Sub ist busy
 
 #define SUB_EN_PIN          7 // Sub ist enabled
 
@@ -98,6 +99,14 @@
 
 // Bit
 
+// Masterstatus
+#define  RAM_READ           0x01  //Bit 0 
+#define  RAM_WRITE          0x02  //Bit 1  
+#define  EEPROM_READ        0x04  //Bit 2
+#define  EEPROM_WRITE       0x08  //Bit 3 
+
+#define  POT_READ           4  //Bit 4
+
 // EEPROM
 
 #define EE_WREN   0
@@ -111,9 +120,9 @@
 
 #define POT_START 0  //    Start Messung Potentiometer
 
-#define SPI_START 2  //    Start SPI auf diesem device
+#define SPI_START 2  //    Start SPI auf diesem Device
 
-#define SPI_END   3  //    End SPI auf diesem device
+#define SPI_END   3  //    End SPI auf diesem Device
 
 #define POT_MITTE 7  //    Mittelwerte der Potentiometer speichern
 
@@ -128,5 +137,9 @@
 
 #define TASTE0				   0
 #define TASTE1             1
+
+#define INTERRUPT_PORT            PORTB   //
+#define INTERRUPT_DDR             DDRB    //
+#define INTERRUPT_PIN             PINB    //
 
 
