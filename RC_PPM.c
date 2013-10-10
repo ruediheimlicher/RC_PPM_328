@@ -295,7 +295,7 @@ void timer1_init(void)
    // Quelle http://www.mikrocontroller.net/topic/103629
    
    //OSZI_A_HI ; // Test: data fuer SR
-   _delay_us(5);
+   //_delay_us(5);
    //#define FRAME_TIME 20 // msec
    KANAL_DDR |= (1<<KANAL_PIN); // Kanal Ausgang
       
@@ -345,7 +345,7 @@ void timer1_init(void)
 
 void timer1_stop(void)
 {
-  // TCCR1A = 0;
+   TCCR1B = 0;
    
 }
 
@@ -483,7 +483,8 @@ ISR (TIMER2_OVF_vect)
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
       
-      
+      //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
+      {
       potstatus |= (1<<SPI_START); // Potentiometer messen
       
       masterstatus |= (1<< POT_READ);
@@ -495,7 +496,7 @@ ISR (TIMER2_OVF_vect)
          timer2BatterieCounter = 0;
          
       }
-
+      }
 		timer2Counter = 0;
        ;
 	} 
@@ -688,23 +689,24 @@ int main (void)
 		//OSZI_B_HI;
       } // if loopcount0
       
-     
+#pragma mark HALT
       
       if (MASTER_PIN & (1<<SUB_BUSY_PIN))
       {
-         
+         masterstatus &= ~(1<<HALT);
       }
       else
       {
          OSZI_A_TOGG ;
-         /*
+         
          spi_end();
+         masterstatus |= (1<<HALT);
          MASTER_PORT |= (1<<MASTER_EN_PIN);
          //cli();
-         
+        
          timer2Counter=0;
          //continue;
-      */
+     
       }
       
       
@@ -746,45 +748,47 @@ int main (void)
          
          uint8_t i=0;
          
-         spi_start();
-         
-         
-         
-         SPI_ADC_init();
-         spiadc_init();
-         
-         
-         for(i=0;i< ANZ_POT;i++)
+         //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
          {
+            spi_start();
             
-            if (i<2)
+            
+            
+            SPI_ADC_init();
+            spiadc_init();
+            
+            
+            for(i=0;i< ANZ_POT;i++)
             {
                
-               //POT_Array[i] = 0x600;
-               POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
-               if (POT_Array[i]==0)
+               if ((i<2) )
                {
-                  //OSZI_A_LO ;
-                  errcount++;
-                  masterstatus |= (1<<ALARM_BIT);
                   
-                  POT_Array[i] = 0x400;
+                  //POT_Array[i] = 0x600;
+                  POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
+                  if (POT_Array[i]==0)
+                  {
+                     //OSZI_A_LO ;
+                     errcount++;
+                     masterstatus |= (1<<ALARM_BIT);
+                     
+                     POT_Array[i] = 0x400;
+                     
+                  }
                   
+                  // Filter
+                  //POT_Array[i] = 3*POT_Array[i]/4 + (MCP3208_spiRead(SingleEnd,i)/4);
+                  //POT_Array[i] = POT_FAKTOR*(1*POT_Array[i]/2 + (MCP3208_spiRead(SingleEnd,i)/2));
+                  _delay_us(2); // war mal 100
+                  //OSZI_A_HI ;
                }
-               
-               // Filter
-               //POT_Array[i] = 3*POT_Array[i]/4 + (MCP3208_spiRead(SingleEnd,i)/4);
-               //POT_Array[i] = POT_FAKTOR*(1*POT_Array[i]/2 + (MCP3208_spiRead(SingleEnd,i)/2));
-               _delay_us(2); // war mal 100
-               //OSZI_A_HI ;
+               else
+               {
+                  POT_Array[i] = 0x400;
+               }
             }
-            else
-            {
-               POT_Array[i] = 0x400;
-            }
+            anzeigecounter++;
          }
-         anzeigecounter++;
-         
          // Mittelwert speichern
          if (potstatus & (1<< POT_MITTE))
          {
@@ -897,6 +901,9 @@ int main (void)
          else
             
          {
+            //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
+            {
+               
             cli();
             SPI_RAM_init();
             
@@ -1050,7 +1057,7 @@ int main (void)
             
             //OSZI_A_HI ;
             
-            
+            } // if busy_pin
             
          }
       } // end Pot messen

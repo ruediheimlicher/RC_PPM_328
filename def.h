@@ -103,7 +103,9 @@
 #define  RAM_READ           0x01  //Bit 0 
 #define  RAM_WRITE          0x02  //Bit 1  
 #define  EEPROM_READ        0x04  //Bit 2
-#define  EEPROM_WRITE       0x08  //Bit 3 
+#define  EEPROM_WRITE       0x08  //Bit 3
+
+#define  HALT                7  //Bit 7 
 
 #define  POT_READ           4  //Bit 4
 
