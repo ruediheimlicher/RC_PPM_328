@@ -15,8 +15,12 @@
 #define SPI_EE_DDR            DDRB    
 #define SPI_EE_PORT           PORTB   
 
-#define SPI_EE_CS_PIN                         1
+#define SPI_EE_CS_PIN                         0
 
+
+// unabh. von Prozessor
+
+#define EE_PAGESIZE 64
 
 #define EE_CS_HI SPI_EE_PORT |= (1<<SPI_EE_CS_PIN)
 #define EE_CS_LO SPI_EE_PORT &= ~(1<<SPI_EE_CS_PIN)
@@ -32,9 +36,10 @@
 //                 1 - sequential mode
 //                 2 - page mode
 //  uint8_t enhold - if 1: disables the hold pin, 0 enables
+//void spiram_init(uint8_t mode, uint8_t enhold);
 
 void spieeprom_init(void);
-                 
+
 void spieeprom_wren(void);
 void spieeprom_write_status(void);
 uint8_t spieeprom_read_status(void);
@@ -44,10 +49,39 @@ uint8_t spieeprom_read_status(void);
 // uint8_t data - the data to write
 void spieeprom_wrbyte(uint16_t addr, uint8_t data);
 
+//WRITE schicken zum start einer page, dann msb, lsb
+// uint16_t addr - the address to write to
+void spieeprom_wrpage_start(uint16_t addr);
+
+//WRITE schicken zum start einer page, dann msb, lsb
+// uint16_t addr - the address to write to
+void spieeprom_wrpage_data(uint8_t data);
+
+
+
 //read a memory location
 // uint16_t addr - the address to read from
 // returns uint8_t - the data read
 uint8_t spieeprom_rdbyte(uint16_t addr);
+
+//READ schicken zum start einer page, dann msb, lsb
+// uint16_t addr - the address to write to
+void spieeprom_rdpage_start(uint16_t addr);
+
+uint8_t spieeprom_rdpage_data(void);
+
+//writes an page to an address
+//  uint16_t startaddr - the address the first byte will be written to
+//  const uint8_t* data - the array to be written
+//  uint16_t length - the number of bytes to be written from the array
+void spieeprom_wrpage(uint16_t startaddr, const volatile uint8_t* data);
+//void spieeprom_wrpage(uint16_t startaddr, const char* data);
+
+//reads a page of memory into an array
+//  uint16_t startaddr - the address the first byte will be read from
+//  uint8_t* data - the array to be written to
+void spieeprom_rdpage(uint16_t startaddr, volatile uint8_t* data);
+//void spieeprom_rdpage(uint16_t startaddr, char* data);
 
 //writes an array to an address
 //  uint16_t startaddr - the address the first byte will be written to
@@ -61,6 +95,8 @@ void spieeprom_wrseq(uint16_t startaddr, const uint8_t* data, uint16_t length);
 //  uint16_t length - the number of bytes to be read from memory
 void spieeprom_rdseq(uint16_t startaddr, uint8_t* data, uint16_t length);
 
+void test_rdpage(uint16_t startaddr, volatile char* data);
+void test_rdpage_uint(uint16_t startaddr, volatile uint8_t* data);
 
 
 #endif

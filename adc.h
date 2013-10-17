@@ -14,7 +14,7 @@ static uint8_t aref = (1<<REFS0); // default to AREF = Vcc
 #if F_CPU == 16000000L
 #define ADC_PRESCALER ((1<<ADPS2) | (1<<ADPS1))
 #elif F_CPU == 8000000L
-#define ADC_PRESCALER ((1<<ADPS2) | (1<<ADPS0))
+#define ADC_PRESCALER ((1<<ADPS2) | (1<<ADPS0)) // F_CPU/32
 #elif F_CPU == 4000000L
 #define ADC_PRESCALER ((1<<ADPS2))
 #elif F_CPU == 2000000L

@@ -79,15 +79,15 @@ static volatile uint8_t    pwmposition=0;
 static volatile uint8_t    pwmdivider=0;
 
 
-volatile char SPI_data='0';
-volatile char SPI_dataArray[SPI_BUFSIZE];
-volatile uint16_t POT_Array[SPI_BUFSIZE];
-volatile uint16_t Mitte_Array[SPI_BUFSIZE];
+volatile char              SPI_data='0';
+volatile char              SPI_dataArray[SPI_BUFSIZE];
+volatile uint16_t          POT_Array[SPI_BUFSIZE];
+volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
 
-volatile uint16_t RAM_Array[SPI_BUFSIZE];
+volatile uint16_t          RAM_Array[SPI_BUFSIZE];
 
-volatile uint16_t Batteriespannung =0;
-volatile short int received=0;
+volatile uint16_t          Batteriespannung =0;
+volatile short int         received=0;
 
 volatile uint16_t          abschnittnummer=0;
 volatile uint16_t          usbcount=0;
@@ -304,11 +304,12 @@ void timer1_init(void)
 
    //TCCR1A = (1<<COM1A0) | (1<<COM1A1);// | (1<<WGM11);	// OC1B set on match, set on TOP
    //TCCR1B = (1<<WGM13) | (1<<WGM12) ;		// TOP = ICR1, clk = sysclk/8 (->1us)
-   TCCR1B |= (1<<CS11);
+   TCCR1B |= (1<<CS11); // f/8
+  // TCCR1B |= (1<<CS10); // f
    TCNT1  = 0;														// reset Timer
    
                               // Impulsdauer
-   OCR1B  = 0xFF;				// Impulsdauer des Kanalimpulses
+   OCR1B  = 0x80;				// Impulsdauer des Kanalimpulses
    
    TIMSK1 |= (1 << OCIE1A);  // enable timer compare interrupt:
    TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt:
@@ -370,7 +371,7 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       //OCR1A  = POT_FAKTOR*POT_Array[1]; // 18 us
       //OCR1A  = POT_FAKTOR*POT_Array[impulscounter]; // 18 us
       
-      
+   
       if (POT_Array[impulscounter] > SERVOMAX)
       {
          POT_Array[impulscounter] = SERVOMAX;
@@ -380,8 +381,9 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       {
          POT_Array[impulscounter] = SERVOMIN;
       }
-       
-      OCR1A  = POT_Array[impulscounter]; // 
+     
+      
+      OCR1A  = POT_Array[impulscounter]; //
    }
    else
    {
@@ -546,6 +548,8 @@ void setMitte(void)
 }
 
 
+
+
 #pragma mark - main
 int main (void) 
 {
@@ -635,9 +639,13 @@ int main (void)
    //versionint >>=8;
    volatile uint8_t versioninth = (versionint & 0xFF00)>>8;
    
+   volatile uint16_t adcdata=0;
+   volatile uint16_t diffdata=0;
+   volatile uint16_t diff =0;
+   
    uint8_t anzeigecounter=0;
    
-#pragma mark while	  
+// MARK: while
 	while (1)
 	{
       //OSZI_B_LO;
@@ -659,15 +667,20 @@ int main (void)
          }
           
          // Messung anzeigen
-         if (loopcount1%0xF == 0)
+         if (loopcount1%0x2F == 0)
          {
             /*
             lcd_gotoxy(0,1);
-            lcd_putint12Bit(POT_Array[0]);
+            lcd_putint12(adcdata);
+            
             lcd_putc('*');
-            lcd_putint12Bit(POT_Array[1]);
+
+            lcd_putint12(diff);
             lcd_putc('*');
-             */
+            */
+           // lcd_putint12(diffdata);
+           // lcd_putc('*');
+             
             /*
             lcd_gotoxy(0,1);
             lcd_putint12Bit(maxwert);
@@ -680,8 +693,8 @@ int main (void)
          // neue Daten in sendbuffer
          for (int i=0;i<8;i++)
          {
-            sendbuffer[8+2*i]=(POT_Array[i] & 0xFF);    // 8 10
-            sendbuffer[8+2*i+1]= (POT_Array[i]>>8) & 0xFF;  // 9  11
+            sendbuffer[8+2*i]=(POT_Array[i] & 0xFF);        // 8  10 12
+            sendbuffer[8+2*i+1]= (POT_Array[i]>>8) & 0xFF;  // 9  11 13
          }
          //OSZI_B_LO;
          
@@ -714,27 +727,7 @@ int main (void)
 
      if (adcstatus & (1<< ADC_START)) // ADC starten
       {
-         
-   //      Batteriespannung = adc_read(0);
-         
-   //      adcstatus &=  ~(1<< ADC_START);
-         
-         /*
-         lcd_gotoxy(0,0);
-         
-         lcd_putint12Bit(Batteriespannung);
-         
-         lcd_putc('*');
-         uint8_t high = (Batteriespannung & 0xFF00)>>8; // *0xFF rechnen und zu low dazuzaehlen
-         lcd_putint(high);
-         uint8_t low = (Batteriespannung & 0xFF);
-         lcd_putc('*');
-         lcd_putint(low);
-         //lcd_puthex(loopcount1);
-          */
-         ;
-
-      }
+       }
       
       if (potstatus & (1<< SPI_START)) // SPI starten, in TIMER2_OVF_vect gesetzt
       {
@@ -766,6 +759,9 @@ int main (void)
                   
                   //POT_Array[i] = 0x600;
                   POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
+                  
+                   
+                  
                   if (POT_Array[i]==0)
                   {
                      //OSZI_A_LO ;
@@ -790,6 +786,7 @@ int main (void)
             anzeigecounter++;
          }
          // Mittelwert speichern
+         
          if (potstatus & (1<< POT_MITTE))
          {
             setMitte();
@@ -799,21 +796,56 @@ int main (void)
          // TASK-Daten von RAM lesen
          
          
-         // Daten an RAM
-         //cli();
-         //PORTE &= ~(1<<PORTE0);
+         // Daten zu POT-Werten aus eeprom
+         //
          MASTER_PORT &= ~(1<<MASTER_EN_PIN);
          
          _delay_us(100);
          SPI_PORT_Init();
          
+         SPI_EE_init();
+         spieeprom_init();
+         //cli();
+        
+         for(i=0;i< ANZ_POT;i++)
+         {
+            
+            if ((i<2) )
+            {
+                              
+               uint16_t mitte = 0;
+               
+               diff=mitte;
+               
+               if (adcdata > mitte)
+               {
+                  diff = adcdata - mitte;
+               }
+               else
+               {
+                  diff = mitte-adcdata;
+               }
+              // diffdata = (uint8_t)spieeprom_rdbyte(diff);
+               
+               if (diffdata == 0)
+               {
+                  diffdata = 0x100;
+               }
+            }
+         }// for i
+
+         sei();
          
          if ((eepromstatus & (1<<EE_WRITE))) // write an eeprom
          {
+            
+            
             /*
-             // if (MASTER_PIN & (1<<SUB_BUSY_PIN))
+             
              {
              SPI_PORT_Init();
+             spieeprom_init();
+             
              eeprom_testdata++;
              eeprom_testaddress--;
              
@@ -896,7 +928,7 @@ int main (void)
              
              // end Daten an EEPROM
              }
-             */
+            */
          } // EE_WRITE
          else
             
