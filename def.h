@@ -36,7 +36,19 @@
 
 // SPI
 
-#define SPI_BUFSIZE 8
+#define SPI_BUFSIZE        8
+
+#define STUFENOFFSET       0x800
+
+#define TASK_OFFSET       0x2000 // Ort fuer Einstellungen
+
+#define SETTINGBREITE      0x80; // Breite des Settingblocks fuer ein Device
+
+#define MITTE_OFFSET        0x10
+#define EXPO_OFFSET        0x20
+#define LEVEL_OFFSET        0x30
+#define MIX_OFFSET        0x40
+
 
 #define STARTDELAYBIT       0
 #define HICOUNTBIT          1

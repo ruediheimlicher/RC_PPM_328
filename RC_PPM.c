@@ -45,12 +45,6 @@ static volatile uint8_t sendbuffer[32]={};
 
 volatile uint8_t timer0startwert=TIMER0_STARTWERT;
 #define USB_DATENBREITE 32
-//volatile uint8_t rxbuffer[USB_DATENBREITE];
-
-/*Der Sendebuffer, der vom Master ausgelesen werden kann.*/
-//volatile uint8_t txbuffer[USB_DATENBREITE];
-
-//uint16_t EEMEM Brennerlaufzeit;	// Akkumulierte Laufzeit
 
 void delay_ms(unsigned int ms);
 
@@ -86,6 +80,10 @@ volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
 
 volatile uint16_t          RAM_Array[SPI_BUFSIZE];
 
+volatile uint8_t          Code_Array[SPI_BUFSIZE]; // Expo und Richtung Einstellungen pro kanal
+volatile uint8_t          Level_Array[SPI_BUFSIZE]; // Ausgangslevel-Einstellungen pro kanal
+
+
 volatile uint16_t          Batteriespannung =0;
 volatile short int         received=0;
 
@@ -94,6 +92,15 @@ volatile uint16_t          usbcount=0;
 
 volatile uint16_t          minwert=0xFFFF;
 volatile uint16_t          maxwert=0;
+
+
+volatile uint16_t adcdata=0;
+volatile uint16_t diffdata=0;
+volatile uint8_t diffdatalo=0;
+volatile uint8_t diffdatahi=0;
+volatile uint16_t diff =0;
+
+volatile uint8_t stufe=0;
 
 
 
@@ -639,9 +646,6 @@ int main (void)
    //versionint >>=8;
    volatile uint8_t versioninth = (versionint & 0xFF00)>>8;
    
-   volatile uint16_t adcdata=0;
-   volatile uint16_t diffdata=0;
-   volatile uint16_t diff =0;
    
    uint8_t anzeigecounter=0;
    
@@ -669,17 +673,18 @@ int main (void)
          // Messung anzeigen
          if (loopcount1%0x2F == 0)
          {
+            
+            //lcd_gotoxy(0,1);
             /*
-            lcd_gotoxy(0,1);
             lcd_putint12(adcdata);
             
             lcd_putc('*');
-
-            lcd_putint12(diff);
-            lcd_putc('*');
-            */
-           // lcd_putint12(diffdata);
-           // lcd_putc('*');
+             */
+            //lcd_putint12(diff);
+            //lcd_putc('*');
+            
+            //lcd_putint12(diffdata);
+            //lcd_putc('*');
              
             /*
             lcd_gotoxy(0,1);
@@ -794,7 +799,8 @@ int main (void)
          }
          
          // TASK-Daten von RAM lesen
-         
+ 
+         // MARK: RAM
          
          // Daten zu POT-Werten aus eeprom
          //
@@ -805,31 +811,48 @@ int main (void)
          
          SPI_EE_init();
          spieeprom_init();
-         //cli();
+         cli();
         
          for(i=0;i< ANZ_POT;i++)
          {
             
-            if ((i<2) )
+            if ((i < 2) )
             {
                               
-               uint16_t mitte = 0;
+               uint16_t mitte = 0x600;
                
                diff=mitte;
+               adcdata = POT_Array[i];
+               stufe = 0;
                
                if (adcdata > mitte)
                {
                   diff = adcdata - mitte;
+               
                }
                else
                {
                   diff = mitte-adcdata;
                }
-              // diffdata = (uint8_t)spieeprom_rdbyte(diff);
+               diffdatalo = (uint8_t)spieeprom_rdbyte(stufe*STUFENOFFSET + 2*diff);
+               diffdatahi = (uint8_t)spieeprom_rdbyte(stufe*STUFENOFFSET + 2*diff +1);
                
+               diffdata = diffdatalo | (diffdatahi <<8);
+               
+               if (adcdata > mitte)
+               {
+                  POT_Array[i] = diffdata + mitte;
+                  
+               }
+               else
+               {
+                  POT_Array[i] = mitte - diffdata;
+               }
+
+                
                if (diffdata == 0)
                {
-                  diffdata = 0x100;
+                  //diffdata = 0x100;
                }
             }
          }// for i
@@ -974,7 +997,56 @@ int main (void)
             }
             //OSZI_A_HI ;
             
-            
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               OSZI_A_LO;
+               spiram_wrbyte(0x3A, adcdata & 0xFF);
+               //spiram_wrbyte(0x20, 17);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               OSZI_A_LO;
+               spiram_wrbyte(0x3B, adcdata & 0xFF);
+               //spiram_wrbyte(0x20, 17);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
+
+               
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               OSZI_A_LO;
+               spiram_wrbyte(0x3C, diff & 0xFF);
+               //spiram_wrbyte(0x20, 17);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               //      OSZI_A_LO;
+               spiram_wrbyte(0x3D,  (diff & 0xFF00)>>8);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
+               
+               _delay_us(LOOPDELAY);
+               RAM_CS_LO;
+               //      OSZI_A_LO;
+               spiram_wrbyte(0x3E, diffdatalo);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               RAM_CS_LO;
+
+               //      OSZI_A_LO;
+               spiram_wrbyte(0x3F, diffdatahi);
+                    OSZI_A_HI;
+               RAM_CS_HI;
+
+               
+               
+         
             
             // Kontrolle
             _delay_us(2);
