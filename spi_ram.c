@@ -162,8 +162,6 @@ uint8_t spiram_rdbyte(uint16_t addr)
    _delay_us(RAMDELAY);
    spi_send(addr); //least significant byte
    _delay_us(RAMDELAY);
-   //   spi_send(addr); //least significant byte
-   //  _delay_us(10);
    
    //read data
    result = spi_send(0x66); //send clock pulses, get result

@@ -51,7 +51,7 @@ void delay_ms(unsigned int ms);
 static volatile uint8_t    adcstatus=0x00;
 static volatile uint8_t    usbstatus=0x00;
 
-static volatile uint8_t     eepromstatus=0x00;
+static volatile uint8_t    eepromstatus=0x00;
 static volatile uint8_t    potstatus=0x80; // Bit 7 gesetzt, Mittelwerte setzen
 static volatile uint8_t    impulscounter=0x00;
 
@@ -76,12 +76,15 @@ static volatile uint8_t    pwmdivider=0;
 volatile char              SPI_data='0';
 volatile char              SPI_dataArray[SPI_BUFSIZE];
 volatile uint16_t          POT_Array[SPI_BUFSIZE];
+volatile uint16_t          Servo_Array[SPI_BUFSIZE];
+
 volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
 
 volatile uint16_t          RAM_Array[SPI_BUFSIZE];
 
-volatile uint8_t          Code_Array[SPI_BUFSIZE]; // Expo und Richtung Einstellungen pro kanal
+volatile uint8_t          Expo_Array[SPI_BUFSIZE]; // Expo und Richtung Einstellungen pro kanal
 volatile uint8_t          Level_Array[SPI_BUFSIZE]; // Ausgangslevel-Einstellungen pro kanal
+volatile uint8_t          Mix_Array[SPI_BUFSIZE]; // Mixing-Einstellungen pro model
 
 
 volatile uint16_t          Batteriespannung =0;
@@ -102,7 +105,13 @@ volatile uint16_t diff =0;
 
 volatile uint8_t stufe=0;
 
+volatile    uint8_t task_in=0; // Task von RC_LCD
+volatile    uint8_t task_indata=0; // Taskdata von RC_LCD
 
+
+volatile    uint8_t task_out=0; // Task an RC_LCD
+volatile    uint8_t task_outdata=0; // Taskdata an RC_LCD
+volatile    uint8_t task_counter=0;
 
 void startTimer2(void)
 {
@@ -333,18 +342,18 @@ void timer1_init(void)
    //OCR1A  = POT_FAKTOR*POT_Array[impulscounter];
    
    
-   if (POT_Array[impulscounter] > SERVOMAX)
+   if (Servo_Array[impulscounter] > SERVOMAX)
    {
-     POT_Array[impulscounter] = SERVOMAX;
+     Servo_Array[impulscounter] = SERVOMAX;
    }
    
-   if (POT_Array[impulscounter] < SERVOMIN)
+   if (Servo_Array[impulscounter] < SERVOMIN)
    {
-      POT_Array[impulscounter] = SERVOMIN;
+      Servo_Array[impulscounter] = SERVOMIN;
    }
 
    
-   OCR1A  = POT_Array[impulscounter]; // POT_Faktor schon nach ADC
+   OCR1A  = Servo_Array[impulscounter]; // POT_Faktor schon nach ADC
       
    
 
@@ -379,18 +388,18 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       //OCR1A  = POT_FAKTOR*POT_Array[impulscounter]; // 18 us
       
    
-      if (POT_Array[impulscounter] > SERVOMAX)
+      if (Servo_Array[impulscounter] > SERVOMAX)
       {
-         POT_Array[impulscounter] = SERVOMAX;
+         Servo_Array[impulscounter] = SERVOMAX;
       }
       
-      if (POT_Array[impulscounter]<  SERVOMIN)
+      if (Servo_Array[impulscounter]<  SERVOMIN)
       {
-         POT_Array[impulscounter] = SERVOMIN;
+         Servo_Array[impulscounter] = SERVOMIN;
       }
      
       
-      OCR1A  = POT_Array[impulscounter]; //
+      OCR1A  = Servo_Array[impulscounter]; //
    }
    else
    {
@@ -487,28 +496,26 @@ volatile uint16_t timer2BatterieCounter=0;
 ISR (TIMER2_OVF_vect) 
 { 
 	timer2Counter ++;
-   if (timer2Counter >= 0x23A) // Laenge des Impulspakets 20ms Atmega328
-
+   if (timer2Counter >= 0x1C0) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
       
       //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
       {
-      potstatus |= (1<<SPI_START); // Potentiometer messen
-      
-      masterstatus |= (1<< POT_READ);
-      
-      timer2BatterieCounter++; // Intervall fuer Messung der Batteriespannung
-      if (timer2BatterieCounter >= 0xF)
-      {
-         adcstatus |= (1<<ADC_START); // Batteriespannung messen
-         timer2BatterieCounter = 0;
+         potstatus |= (1<<SPI_START); // Potentiometer messen
          
-      }
+         masterstatus |= (1<< POT_READ);
+         
+         timer2BatterieCounter++; // Intervall fuer Messung der Batteriespannung
+         if (timer2BatterieCounter >= 0xF)
+         {
+            adcstatus |= (1<<ADC_START); // Batteriespannung messen
+            timer2BatterieCounter = 0;
+         }
       }
 		timer2Counter = 0;
-       ;
-	} 
+      
+	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
    //OSZI_A_LO ;
 }
@@ -554,11 +561,72 @@ void setMitte(void)
    }
 }
 
+// MARK: readSettings
+void readSettings(uint8_t modelindex)
+{
+  
+   uint8_t pos=0;
+    
+    // Level lesen
+    uint16_t readstartadresse = TASK_OFFSET  + LEVEL_OFFSET + modelindex*SETTINGBREITE;
+    // startadresse fuer Settings des models
+    for (pos=0;pos<8;pos++)
+    {
+       Level_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+    }
+    
+    // Expo lesen
+    readstartadresse = TASK_OFFSET  + EXPO_OFFSET + modelindex*SETTINGBREITE;
+    for (pos=0;pos<8;pos++)
+    {
+       Expo_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+    }
+   
+   // Mix lesen
+    readstartadresse = TASK_OFFSET  + MIX_OFFSET + modelindex*SETTINGBREITE;
+    for (pos=0;pos<8;pos++)
+    {
+       Mix_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+    }
+
+   lcd_gotoxy(0,0);
+   lcd_putc('E');
+   lcd_putc(' ');
+   lcd_puthex(Expo_Array[0]);
+   lcd_puthex(Expo_Array[1]);
+   
+   lcd_putc(' ');
+   lcd_putc('L');
+   lcd_putc(' ');
+   lcd_puthex(Level_Array[0]);
+   
+   lcd_puthex(Level_Array[1]);
+   lcd_putc(' ');
+   lcd_putc('M');
+   lcd_putc(' ');
+   lcd_puthex(Mix_Array[0]);
+   
+   lcd_puthex(Mix_Array[1]);
+
+   lcd_putc('+');
+   
+   uint8_t levela = Level_Array[0]& 0x07;
+   uint8_t levelb = (Level_Array[0]& 0x70)>>4;
+   
+   lcd_gotoxy(6,1);
+   lcd_putc('A');
+   
+   lcd_puthex(levela);
+    lcd_putc(' ');
+   lcd_putc('B');
+   
+   lcd_puthex(levelb);
 
 
+}
 
 #pragma mark - main
-int main (void) 
+int main (void)
 {
 
    uint16_t count=0;
@@ -592,6 +660,7 @@ int main (void)
    volatile    uint8_t testaddress =0x00;
    volatile    uint8_t errcount =0x00;
    volatile    uint8_t ram_indata=0;
+   
 
    volatile    uint8_t eeprom_indata=0;
    volatile    uint8_t eeprom_testdata =0x00;
@@ -646,6 +715,7 @@ int main (void)
    //versionint >>=8;
    volatile uint8_t versioninth = (versionint & 0xFF00)>>8;
    
+   eepromstatus |= (1<<EE_READ_SETTINGS); // Settings lesen beim Start
    
    uint8_t anzeigecounter=0;
    
@@ -763,9 +833,11 @@ int main (void)
                {
                   
                   //POT_Array[i] = 0x600;
+                  
+                  
                   POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
                   
-                   
+                  
                   
                   if (POT_Array[i]==0)
                   {
@@ -799,7 +871,7 @@ int main (void)
          }
          
          // TASK-Daten von RAM lesen
- 
+         
          // MARK: RAM
          
          // Daten zu POT-Werten aus eeprom
@@ -812,57 +884,98 @@ int main (void)
          SPI_EE_init();
          spieeprom_init();
          cli();
-        
+         
          for(i=0;i< ANZ_POT;i++)
          {
             
             if ((i < 2) )
             {
-                              
+               uint8_t levela = Level_Array[i]& 0x0F;
+               uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
+               
+               uint8_t richtung = Expo_Array[i] & 0x80; // bit 7
+               
+               uint8_t stufea = Expo_Array[i] & 0x03;
+               uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
+               
+               
                uint16_t mitte = 0x600;
                
                diff=mitte;
                adcdata = POT_Array[i];
                stufe = 0;
                
-               if (adcdata > mitte)
+               if (adcdata > mitte) // Seite A
                {
                   diff = adcdata - mitte;
-               
+                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);
+                  diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
+
+                  
                }
-               else
+               else // Seite B
                {
-                  diff = mitte-adcdata;
+                  diff = mitte - adcdata;
+                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
+                  diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
+                 
+                  
                }
-               diffdatalo = (uint8_t)spieeprom_rdbyte(stufe*STUFENOFFSET + 2*diff);
-               diffdatahi = (uint8_t)spieeprom_rdbyte(stufe*STUFENOFFSET + 2*diff +1);
+               
+               //levela=4;
                
                diffdata = diffdatalo | (diffdatahi <<8);
                
-               if (adcdata > mitte)
+               
+               
+               if ((adcdata > mitte) )
                {
-                  POT_Array[i] = diffdata + mitte;
+                  diffdata *= (8-levela);
+                  diffdata /= 8;
                   
+                  if (richtung)
+                  {
+                     Servo_Array[i] = mitte - diffdata;
+                  }
+                  else
+                  {
+                     Servo_Array[i] = mitte + diffdata;
+                  }
+                  
+                                 
                }
                else
                {
-                  POT_Array[i] = mitte - diffdata;
+                  diffdata *= (8-levelb);
+                  diffdata /= 8;
+                  if (richtung)
+                  {
+                     Servo_Array[i] = mitte + diffdata;
+                  }
+                  else
+                  {
+                     Servo_Array[i] = mitte - diffdata;
+                  }
+                 
+                  
+                  
                }
-
-                
+               
+               
                if (diffdata == 0)
                {
                   //diffdata = 0x100;
                }
             }
+            
          }// for i
-
+         
          sei();
          
          if ((eepromstatus & (1<<EE_WRITE))) // write an eeprom
          {
             
-            
+            eepromstatus &= ~(1<<EE_WRITE);
             /*
              
              {
@@ -872,7 +985,7 @@ int main (void)
              eeprom_testdata++;
              eeprom_testaddress--;
              
-             eepromstatus &= ~(1<<EE_WRITE);
+             
              
              lcd_gotoxy(19,1);
              lcd_putc((eeprom_testdata %10)+48);
@@ -951,7 +1064,7 @@ int main (void)
              
              // end Daten an EEPROM
              }
-            */
+             */
          } // EE_WRITE
          else
             
@@ -959,62 +1072,91 @@ int main (void)
             //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
             {
                
-            cli();
-            SPI_RAM_init();
-            
-            spiram_init();
-            
-            _delay_us(100);
-            // statusregister schreiben
-            RAM_CS_LO;
-            _delay_us(LOOPDELAY);
-            spiram_write_status(0x00);
-            _delay_us(LOOPDELAY);
-            RAM_CS_HI; // SS HI End
-            _delay_us(100);
-            
-            // testdata in-out
-            RAM_CS_LO;
-            _delay_us(LOOPDELAY);
-            //      OSZI_A_LO;
-            spiram_wrbyte(testaddress, testdata);
-            //     OSZI_A_HI;
-            RAM_CS_HI;
-            
-            //OSZI_A_LO ;
-            for (i=0;i< 8;i++)
-            {
+               cli();
+               SPI_RAM_init();
+               
+               spiram_init();
+               
+               _delay_us(100);
+               // statusregister schreiben
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(2*i, sendbuffer[8+2*i]);
-               RAM_CS_HI;
+               spiram_write_status(0x00);
                _delay_us(LOOPDELAY);
+               RAM_CS_HI; // SS HI End
+               _delay_us(100);
+               
+               // Kontrolle: testdata in-out
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(2*i+1, sendbuffer[8+2*i+1]);
+               //      OSZI_A_LO;
+               spiram_wrbyte(testaddress, testdata);
+               //     OSZI_A_HI;
                RAM_CS_HI;
                
-            }
-            //OSZI_A_HI ;
-            
+               // Pot-Daten schicken
+               //OSZI_A_LO ;
+               for (i=0;i< 8;i++)
+               {
+                  RAM_CS_LO;
+                  _delay_us(LOOPDELAY);
+                  spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
+                  //spiram_wrbyte(2*i, sendbuffer[8+2*i]);
+                  
+                  RAM_CS_HI;
+                  _delay_us(LOOPDELAY);
+                  RAM_CS_LO;
+                  _delay_us(LOOPDELAY);
+                  spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
+                  //spiram_wrbyte(2*i+1, sendbuffer[8+2*i+1]);
+                  RAM_CS_HI;
+                  
+               }
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(16, Servo_Array[0] & 0x00FF);
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(16+1, (Servo_Array[0] & 0xFF00)>>8);
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(18, Servo_Array[1] & 0x00FF);
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(18+1, (Servo_Array[1] & 0xFF00)>>8);
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               
+               
+               // ADC-Daten schicken
+               
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                OSZI_A_LO;
-               spiram_wrbyte(0x3A, adcdata & 0xFF);
-               //spiram_wrbyte(0x20, 17);
+               spiram_wrbyte(0x3E, adcdata & 0xFF);
                //     OSZI_A_HI;
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                OSZI_A_LO;
-               spiram_wrbyte(0x3B, adcdata & 0xFF);
-               //spiram_wrbyte(0x20, 17);
+               spiram_wrbyte(0x3F, adcdata & 0xFF);
                //     OSZI_A_HI;
                RAM_CS_HI;
-
                
                
+               // Diff-Daten schicken
+               /*
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                OSZI_A_LO;
@@ -1038,129 +1180,189 @@ int main (void)
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                RAM_CS_LO;
-
+               
                //      OSZI_A_LO;
                spiram_wrbyte(0x3F, diffdatahi);
-                    OSZI_A_HI;
+               OSZI_A_HI;
                RAM_CS_HI;
+               */
+               
+               // Task lesen
+                task_in=0;
+               _delay_us(2);
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               //     OSZI_B_LO;
+               _delay_us(LOOPDELAY);
+               task_in = spiram_rdbyte(READ_TASKADRESSE);
+               _delay_us(LOOPDELAY);
+               //     OSZI_B_HI;
+               RAM_CS_HI;
+ 
+               
+              
+               if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
+               {
+                  eepromstatus &= ~(1<<EE_READ_SETTINGS);
+                  
+                  task_counter++;
+                  // Taskdaten lesen
+                  _delay_us(2);
+                  RAM_CS_LO;
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_LO;
+                  _delay_us(LOOPDELAY);
+                  task_indata = spiram_rdbyte(READ_TASKDATA);
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_HI;
+                  RAM_CS_HI;
+                
+                  
+                  lcd_gotoxy(0,1);
+                  lcd_puthex(task_in);
+                  lcd_putc('+');
+                  lcd_puthex(task_counter);
+
+                  readSettings(task_indata);
+                  
+                  task_in &= ~(1<<RAM_RECV_LCD_TASK);
+                  
+                  // Taskdaten entfernen
+                  _delay_us(LOOPDELAY);
+                  RAM_CS_LO;
+                  spiram_wrbyte(READ_TASKADRESSE, 0);
+                  OSZI_A_HI;
+                  RAM_CS_HI;
+
+               
+               }
 
                
                
-         
-            
-            // Kontrolle
-            _delay_us(2);
-            RAM_CS_LO;
-            _delay_us(LOOPDELAY);
-            //     OSZI_B_LO;
-            _delay_us(LOOPDELAY);
-            ram_indata = spiram_rdbyte(testaddress);
-            _delay_us(LOOPDELAY);
-            //     OSZI_B_HI;
-            RAM_CS_HI;
-            
-            // Fehler zaehlen
-            if ((testdata == ram_indata))
-            {
-               masterstatus &= ~(1<<ALARM_BIT);
-            }
-            else
-            {
-               errcount++;
-               TCNT2 = 0;
-               masterstatus |= (1<<ALARM_BIT);
-            }
-            
-            
-            // statusregister schreiben
-            RAM_CS_LO;
-            _delay_us(LOOPDELAY);
-            spiram_write_status(0x00);
-            _delay_us(LOOPDELAY);
-            RAM_CS_HI; // SS HI End
-            _delay_us(2);
-            
-            // err
-            RAM_CS_LO;
-            
-            _delay_us(LOOPDELAY);
-            //      OSZI_A_LO;
-            spiram_wrbyte(7, errcount);
-            //     OSZI_A_HI;
-            RAM_CS_HI;
-            
-            
-            _delay_us(2);
-            
-            /*
-             RAM_CS_LO;
-             for (uint8_t k=0;k<32;k++)
-             {
-             spiram_wrbyte(testaddress, testdata);
-             }
-             RAM_CS_HI;
-             */
-            // Daten aendern
-            if (outcounter%0x40 == 0)
-            {
+               // Taskdaten schreiben
+               _delay_us(LOOPDELAY);
+               RAM_CS_LO;
+               spiram_wrbyte(WRITE_TASKADRESSE, task_outdata);
+               OSZI_A_HI;
+               RAM_CS_HI;
                
-               // timer2Counter=0;
-               //lcd_gotoxy(0,0);
                
-               //lcd_putint12(timer2Counter);
                
-               //lcd_putc('*');
                
-               //lcd_putint(testdata);
-               //lcd_putc('*');
-               //lcd_putint(ram_indata);
-               //lcd_putc('+');
-               if  (masterstatus & (1<<ALARM_BIT))
+               
+               // Kontrolle
+               _delay_us(2);
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               //     OSZI_B_LO;
+               _delay_us(LOOPDELAY);
+               ram_indata = spiram_rdbyte(testaddress);
+               _delay_us(LOOPDELAY);
+               //     OSZI_B_HI;
+               RAM_CS_HI;
+               
+               // Fehler zaehlen
+               if ((testdata == ram_indata))
                {
                   masterstatus &= ~(1<<ALARM_BIT);
-                  lcd_gotoxy(0,0);
-                  lcd_putc('+');
-                  lcd_putint(errcount);
-                  lcd_putc('+');
-                  
+               }
+               else
+               {
+                  errcount++;
+                  TCNT2 = 0;
+                  masterstatus |= (1<<ALARM_BIT);
                }
                
-               testdata++;
-               testaddress = 0xFF;
-               //testaddress--;
+               
+               // statusregister schreiben
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_write_status(0x00);
+               _delay_us(LOOPDELAY);
+               RAM_CS_HI; // SS HI End
+               _delay_us(2);
+               
+               // err
+               RAM_CS_LO;
+               
+               _delay_us(LOOPDELAY);
+               //      OSZI_A_LO;
+               spiram_wrbyte(7, errcount);
+               //     OSZI_A_HI;
+               RAM_CS_HI;
                
                
-            }
-            outcounter++;
-            
-            _delay_us(LOOPDELAY);
-            
-            // end Daten an RAM
-            
-            
-            // EEPROM Test
-            
-            
-            //spi_end();
-            sei();
-            // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen VorgŠngen
-            {
+               _delay_us(2);
                
-               timer1_init(); // Kanaele starten
+               /*
+                RAM_CS_LO;
+                for (uint8_t k=0;k<32;k++)
+                {
+                spiram_wrbyte(testaddress, testdata);
+                }
+                RAM_CS_HI;
+                */
+               // Daten aendern
+               if (outcounter%0x40 == 0)
+               {
+                  
+                  // timer2Counter=0;
+                  //lcd_gotoxy(0,0);
+                  
+                  //lcd_putint12(timer2Counter);
+                  
+                  //lcd_putc('*');
+                  
+                  //lcd_putint(testdata);
+                  //lcd_putc('*');
+                  //lcd_putint(ram_indata);
+                  //lcd_putc('+');
+                  if  (masterstatus & (1<<ALARM_BIT))
+                  {
+                     masterstatus &= ~(1<<ALARM_BIT);
+                     lcd_gotoxy(0,0);
+                     lcd_putc('+');
+                     lcd_putint(errcount);
+                     lcd_putc('+');
+                     
+                  }
+                  
+                  testdata++;
+                  testaddress = 0xFF;
+                  //testaddress--;
+                  
+                  
+               }
+               outcounter++;
                
-            }
-            //   else
-            {
-               //      abschnittnummer=0; // nach Master-Vorgang Position des Counters fuer PageWrite zuruecksetzen
-            }
-            //PORTD &= ~(1<<PORTD5); //  LO
-            
-            
-            //timer1_stop();
-            
-            
-            //OSZI_A_HI ;
-            
+               _delay_us(LOOPDELAY);
+               
+               // end Daten an RAM
+               
+               
+               // EEPROM Test
+               
+               
+               //spi_end();
+               sei();
+               // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen VorgŠngen
+               {
+                  
+                  timer1_init(); // Kanaele starten
+                  
+               }
+               //   else
+               {
+                  //      abschnittnummer=0; // nach Master-Vorgang Position des Counters fuer PageWrite zuruecksetzen
+               }
+               //PORTD &= ~(1<<PORTD5); //  LO
+               
+               
+               //timer1_stop();
+               
+               
+               //OSZI_A_HI ;
+               
             } // if busy_pin
             
          }

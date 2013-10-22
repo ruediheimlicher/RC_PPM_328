@@ -36,24 +36,35 @@
 
 // SPI
 
-#define SPI_BUFSIZE        8
+#define SPI_BUFSIZE              8
 
-#define STUFENOFFSET       0x800
+#define STUFENOFFSET             0x800
 
-#define TASK_OFFSET       0x2000 // Ort fuer Einstellungen
+#define TASK_OFFSET              0x2000 // Ort fuer Einstellungen
 
-#define SETTINGBREITE      0x80; // Breite des Settingblocks fuer ein Device
+#define SETTINGBREITE            0x80; // Breite des Settingblocks fuer ein Device
 
-#define MITTE_OFFSET        0x10
-#define EXPO_OFFSET        0x20
-#define LEVEL_OFFSET        0x30
-#define MIX_OFFSET        0x40
+#define MITTE_OFFSET             0x10
+#define EXPO_OFFSET              0x20
+#define LEVEL_OFFSET             0x30
+#define MIX_OFFSET               0x40
+
+#define READ_TASKADRESSE         0x1F0     // RAM_Adresse fuer  Task-Auftrag von RC_LCD
+#define READ_TASKDATA            0x1F1
+
+#define WRITE_TASKADRESSE        0x1FA     // RAM_Adresse fuer Task-Auftrag an RC_LCD
+#define WRITE_TASKDATA           0x1FB
+
+#define RAM_SEND_LCD_TASK         1 // LCD soll Task lesen (Auftrag AN LCD)
+#define RAM_RECV_LCD_TASK         2 // RAM soll Task lesen (Auftrag VON PPM)
 
 
-#define STARTDELAYBIT       0
-#define HICOUNTBIT          1
+#define RAM_TASK_OK              7 // Task gelesen
 
-#define WDTBIT              7
+#define STARTDELAYBIT            0
+#define HICOUNTBIT               1
+
+#define WDTBIT                   7
 
 // CNC12
 #define CMD_PORT            PORTD   //    PORTB
@@ -92,9 +103,19 @@
          
 #define MASTER_EN_HI           MASTER_PORT & (1<<MASTER_EN_PIN)
 
+// RAM
+#define TASK_OFFSET       0x2000 // Ort fuer Einstellungen
+
+#define SETTINGBREITE      0x100; // 256 Bytes, Breite des Settingblocks fuer ein model
+
+#define  MITTE_OFFSET      0x10 // 16
+#define  LEVEL_OFFSET      0x20 // 32
+#define  EXPO_OFFSET       0x30 // 48
+#define  MIX_OFFSET        0x40 // 64
+
 
 // ADC
-// CNC12
+
 #define ADC_PORT            PORTC   //
 #define ADC_DDR             DDRC    //    
 #define ADC_PIN             PINC    //    
@@ -126,6 +147,8 @@
 #define EE_WREN   0
 #define EE_WRITE  1
 #define EE_READ   2
+
+#define EE_READ_SETTINGS   4
 
 
 // Bit
