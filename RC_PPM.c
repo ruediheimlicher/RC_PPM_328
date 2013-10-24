@@ -77,6 +77,7 @@ volatile char              SPI_data='0';
 volatile char              SPI_dataArray[SPI_BUFSIZE];
 volatile uint16_t          POT_Array[SPI_BUFSIZE];
 volatile uint16_t          Servo_Array[SPI_BUFSIZE];
+volatile int16_t          Servo_ArrayInt[SPI_BUFSIZE]; // signed Int
 
 volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
 
@@ -101,6 +102,9 @@ volatile uint16_t adcdata=0;
 volatile uint16_t diffdata=0;
 volatile uint8_t diffdatalo=0;
 volatile uint8_t diffdatahi=0;
+
+volatile int16_t diffdataInt=0;
+
 volatile uint16_t diff =0;
 
 volatile uint8_t stufe=0;
@@ -586,9 +590,9 @@ void readSettings(uint8_t modelindex)
     readstartadresse = TASK_OFFSET  + MIX_OFFSET + modelindex*SETTINGBREITE;
     for (pos=0;pos<8;pos++)
     {
-       Mix_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+       Mix_Array[pos] = spieeprom_rdbyte(readstartadresse+pos); // data 0: kanaele data 1: mixart
     }
-
+/*
    lcd_gotoxy(0,0);
    lcd_putc('E');
    lcd_putc(' ');
@@ -599,20 +603,30 @@ void readSettings(uint8_t modelindex)
    lcd_putc('L');
    lcd_putc(' ');
    lcd_puthex(Level_Array[0]);
-   
    lcd_puthex(Level_Array[1]);
    lcd_putc(' ');
-   lcd_putc('M');
+ */
+
+   lcd_gotoxy(0,1);
+   lcd_putc('A');
+   //lcd_putc(' ');
+   lcd_putint12(readstartadresse);
    lcd_putc(' ');
+   lcd_putc('M');
+   //lcd_putc(' ');
    lcd_puthex(Mix_Array[0]);
-   
    lcd_puthex(Mix_Array[1]);
+   lcd_putc(' ');
+   lcd_puthex(Mix_Array[2]);
+   lcd_puthex(Mix_Array[3]);
+
 
    lcd_putc('+');
-   
+  
    uint8_t levela = Level_Array[0]& 0x07;
    uint8_t levelb = (Level_Array[0]& 0x70)>>4;
    
+   /*
    lcd_gotoxy(6,1);
    lcd_putc('A');
    
@@ -621,7 +635,7 @@ void readSettings(uint8_t modelindex)
    lcd_putc('B');
    
    lcd_puthex(levelb);
-
+    */
 
 }
 
@@ -706,6 +720,11 @@ int main (void)
    sei();
    
    PWM = 0;
+   uint8_t n=0;
+   for (n=0;n<8;n++)
+   {
+      Mitte_Array[n] = MITTE;
+   }
    
    char* versionstring = (char*) malloc(4);
    strncpy(versionstring, VERSION+9, 3);
@@ -885,9 +904,9 @@ int main (void)
          spieeprom_init();
          cli();
          
-         for(i=0;i< ANZ_POT;i++)
+         // Servodaten aufbereiten ohne Mix
+         for(i=0;i< 8;i++)
          {
-            
             if ((i < 2) )
             {
                uint8_t levela = Level_Array[i]& 0x0F;
@@ -899,7 +918,7 @@ int main (void)
                uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
                
                
-               uint16_t mitte = 0x600;
+               uint16_t mitte = Mitte_Array[i];
                
                diff=mitte;
                adcdata = POT_Array[i];
@@ -918,16 +937,24 @@ int main (void)
                   diff = mitte - adcdata;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
-                 
-                  
+                }
+               
+               
+               // start signed int
+               
+               diffdataInt = diffdatalo | (diffdatahi <<8);
+               if (adcdata < mitte)
+               {
+                  diffdataInt *= (-1);
                }
                
-               //levela=4;
+               
+               
+               // end signed int
+               
                
                diffdata = diffdatalo | (diffdatahi <<8);
-               
-               
-               
+                
                if ((adcdata > mitte) )
                {
                   diffdata *= (8-levela);
@@ -948,6 +975,7 @@ int main (void)
                {
                   diffdata *= (8-levelb);
                   diffdata /= 8;
+                  
                   if (richtung)
                   {
                      Servo_Array[i] = mitte + diffdata;
@@ -956,9 +984,6 @@ int main (void)
                   {
                      Servo_Array[i] = mitte - diffdata;
                   }
-                 
-                  
-                  
                }
                
                
@@ -969,6 +994,18 @@ int main (void)
             }
             
          }// for i
+         
+         
+         // Servodaten mit Mix verarbeiten
+         // Mix_Array: data0:
+         for (i=0;i<4;i++)
+         {
+            if (Mix_Array[2*i] & 0x07) // mixart ist gesetzt
+            {
+               
+            }
+         }
+         
          
          sei();
          
@@ -1218,11 +1255,13 @@ int main (void)
                   RAM_CS_HI;
                 
                   
-                  lcd_gotoxy(0,1);
+                  lcd_gotoxy(12,0);
                   lcd_puthex(task_in);
                   lcd_putc('+');
                   lcd_puthex(task_counter);
-
+                  lcd_putc('+');
+                  lcd_clr_line(1);
+                  
                   readSettings(task_indata);
                   
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);

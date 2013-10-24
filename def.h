@@ -150,6 +150,8 @@
 
 #define EE_READ_SETTINGS   4
 
+#define MITTE 0x600
+
 
 // Bit
 
