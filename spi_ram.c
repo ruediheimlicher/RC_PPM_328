@@ -38,7 +38,7 @@ const uint8_t __HOLD_MASK = 0b00000001;
 //  uint8_t data - the data to be shifted out
 //  returns uint8_t - the data received during sending
 
-#define RAMDELAY 0
+#define RAMDELAY 1
 #define M1 1   // 1MB Device
 
 uint8_t spi_send(uint8_t value)

@@ -33,6 +33,8 @@
 
 #define LOOPDELAY 1
 
+#define INT 1    //Verwendung von Integer bei Berechnung
+
 #define SERVOMAX  2000
 #define SERVOMIN  1000
 
@@ -77,6 +79,7 @@ volatile char              SPI_data='0';
 volatile char              SPI_dataArray[SPI_BUFSIZE];
 volatile uint16_t          POT_Array[SPI_BUFSIZE];
 volatile uint16_t          Servo_Array[SPI_BUFSIZE];
+
 volatile int16_t          Servo_ArrayInt[SPI_BUFSIZE]; // signed Int
 
 volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
@@ -96,7 +99,9 @@ volatile uint16_t          usbcount=0;
 
 volatile uint16_t          minwert=0xFFFF;
 volatile uint16_t          maxwert=0;
-
+volatile int16_t             canalwerta=0;
+volatile int16_t             canalwertb=0;
+volatile uint8_t           mixcanal=0;
 
 volatile uint16_t adcdata=0;
 volatile uint16_t diffdata=0;
@@ -345,20 +350,38 @@ void timer1_init(void)
    //OCR1A  = POT_FAKTOR*POT_Array[1];
    //OCR1A  = POT_FAKTOR*POT_Array[impulscounter];
    
-   
-   if (Servo_Array[impulscounter] > SERVOMAX)
+   if (INT)
    {
-     Servo_Array[impulscounter] = SERVOMAX;
-   }
-   
-   if (Servo_Array[impulscounter] < SERVOMIN)
-   {
-      Servo_Array[impulscounter] = SERVOMIN;
-   }
-
-   
-   OCR1A  = Servo_Array[impulscounter]; // POT_Faktor schon nach ADC
+      if (Servo_ArrayInt[impulscounter] > SERVOMAX)
+      {
+         Servo_ArrayInt[impulscounter] = SERVOMAX;
+      }
       
+      if (Servo_ArrayInt[impulscounter] < SERVOMIN)
+      {
+         Servo_ArrayInt[impulscounter] = SERVOMIN;
+      }
+      
+      
+      OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
+      
+   }
+   else
+   {
+      
+      if (Servo_Array[impulscounter] > SERVOMAX)
+      {
+         Servo_Array[impulscounter] = SERVOMAX;
+      }
+      
+      if (Servo_Array[impulscounter]<  SERVOMIN)
+      {
+         Servo_Array[impulscounter] = SERVOMIN;
+      }
+      
+      
+      OCR1A  = Servo_Array[impulscounter]; //
+   }
    
 
 
@@ -385,25 +408,48 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       KANAL_HI;
       TCNT1  = 0;
       //KANAL_HI;
-            
+      
       // Laenge des naechsten Impuls setzen
       
       //OCR1A  = POT_FAKTOR*POT_Array[1]; // 18 us
       //OCR1A  = POT_FAKTOR*POT_Array[impulscounter]; // 18 us
       
-   
-      if (Servo_Array[impulscounter] > SERVOMAX)
+      if (INT)
       {
-         Servo_Array[impulscounter] = SERVOMAX;
+         
+         if (Servo_ArrayInt[impulscounter] > SERVOMAX)
+         {
+            Servo_ArrayInt[impulscounter] = SERVOMAX;
+         }
+         
+         if (Servo_ArrayInt[impulscounter] < SERVOMIN)
+         {
+            Servo_ArrayInt[impulscounter] = SERVOMIN;
+         }
+         
+         
+         OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
+         
+      }
+      else
+      {
+         
+         if (Servo_Array[impulscounter] > SERVOMAX)
+         {
+            Servo_Array[impulscounter] = SERVOMAX;
+         }
+         
+         if (Servo_Array[impulscounter]<  SERVOMIN)
+         {
+            Servo_Array[impulscounter] = SERVOMIN;
+         }
+         
+         
+         OCR1A  = Servo_Array[impulscounter]; //
       }
       
-      if (Servo_Array[impulscounter]<  SERVOMIN)
-      {
-         Servo_Array[impulscounter] = SERVOMIN;
-      }
-     
       
-      OCR1A  = Servo_Array[impulscounter]; //
+      
    }
    else
    {
@@ -500,7 +546,7 @@ volatile uint16_t timer2BatterieCounter=0;
 ISR (TIMER2_OVF_vect) 
 { 
 	timer2Counter ++;
-   if (timer2Counter >= 0x1C0) // Laenge des Impulspakets 20ms Atmega328
+   if (timer2Counter >= 0x01A0) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
       
@@ -838,12 +884,8 @@ int main (void)
          //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
          {
             spi_start();
-            
-            
-            
-            SPI_ADC_init();
+             SPI_ADC_init();
             spiadc_init();
-            
             
             for(i=0;i< ANZ_POT;i++)
             {
@@ -853,9 +895,10 @@ int main (void)
                   
                   //POT_Array[i] = 0x600;
                   
-                  
+                  cli();
                   POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
-                  
+                  sei();
+                  // POT_Array[i] = 0x600;
                   
                   
                   if (POT_Array[i]==0)
@@ -864,7 +907,7 @@ int main (void)
                      errcount++;
                      masterstatus |= (1<<ALARM_BIT);
                      
-                     POT_Array[i] = 0x400;
+                     POT_Array[i] = 0x600;
                      
                   }
                   
@@ -876,7 +919,7 @@ int main (void)
                }
                else
                {
-                  POT_Array[i] = 0x400;
+                  POT_Array[i] = 0x600;
                }
             }
             anzeigecounter++;
@@ -897,7 +940,7 @@ int main (void)
          //
          MASTER_PORT &= ~(1<<MASTER_EN_PIN);
          
-         _delay_us(100);
+         _delay_us(5);
          SPI_PORT_Init();
          
          SPI_EE_init();
@@ -907,7 +950,7 @@ int main (void)
          // Servodaten aufbereiten ohne Mix
          for(i=0;i< 8;i++)
          {
-            if ((i < 2) )
+            if ((i < 6) ) // 2 Steuerknueppel und 2 Schieber
             {
                uint8_t levela = Level_Array[i]& 0x0F;
                uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
@@ -916,8 +959,7 @@ int main (void)
                
                uint8_t stufea = Expo_Array[i] & 0x03;
                uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
-               
-               
+                              
                uint16_t mitte = Mitte_Array[i];
                
                diff=mitte;
@@ -929,7 +971,7 @@ int main (void)
                   diff = adcdata - mitte;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
-
+                  
                   
                }
                else // Seite B
@@ -937,69 +979,75 @@ int main (void)
                   diff = mitte - adcdata;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
-                }
-               
+               }
+               // MARK: Integer
                
                // start signed int
                
-               diffdataInt = diffdatalo | (diffdatahi <<8);
-               
-               if (adcdata > mitte) // positiver Wert
+               if (INT)
                {
-                  diffdataInt *= (8-levela);
-                  diffdataInt /= 8;
-               
-               }
-               else // negativer Wert
-               {
-                  diffdataInt *= (8-levelb);
-                  diffdataInt /= 8;
+                  diffdataInt = diffdatalo | (diffdatahi <<8);
                   
-                  diffdataInt *= (-1);
-               }
-               if (richtung) // Richtung umkehren
-               {
-                  diffdataInt *= (-1);
-               }
-               Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
-               
-               
-               // end signed int
-               
-               
-               diffdata = diffdatalo | (diffdatahi <<8);
-                
-               if ((adcdata > mitte) )
-               {
-                  diffdata *= (8-levela);
-                  diffdata /= 8;
                   
-                  if (richtung)
+                  if (adcdata > mitte) // positiver Wert
                   {
-                     Servo_Array[i] = mitte - diffdata;
+                     diffdataInt *= (8-levela);
+                     diffdataInt /= 8;
+                     
                   }
-                  else
+                  else // negativer Wert
                   {
-                     Servo_Array[i] = mitte + diffdata;
+                     diffdataInt *= (8-levelb);
+                     diffdataInt /= 8;
+                     
+                     diffdataInt *= (-1);
+                  }
+                  if (richtung) // Richtung umkehren
+                  {
+                     diffdataInt *= (-1);
                   }
                   
-                                 
+                  Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
+                  
+                  
+                  // end signed int
                }
                else
                {
-                  diffdata *= (8-levelb);
-                  diffdata /= 8;
                   
-                  if (richtung)
+                  diffdata = diffdatalo | (diffdatahi <<8);
+                  
+                  if ((adcdata > mitte) )
                   {
-                     Servo_Array[i] = mitte + diffdata;
+                     diffdata *= (8-levela);
+                     diffdata /= 8;
+                     
+                     if (richtung)
+                     {
+                        Servo_Array[i] = mitte - diffdata;
+                     }
+                     else
+                     {
+                        Servo_Array[i] = mitte + diffdata;
+                     }
+                     
+                     
                   }
                   else
                   {
-                     Servo_Array[i] = mitte - diffdata;
+                     diffdata *= (8-levelb);
+                     diffdata /= 8;
+                     
+                     if (richtung)
+                     {
+                        Servo_Array[i] = mitte + diffdata;
+                     }
+                     else
+                     {
+                        Servo_Array[i] = mitte - diffdata;
+                     }
                   }
                }
-               
                
                if (diffdata == 0)
                {
@@ -1011,21 +1059,23 @@ int main (void)
          
          
          // Servodaten mit Mix verarbeiten
-         // Mix_Array: data0:
+         // Mix_Array 0: canals
+         // Mix_Array 1: mixart
+         
          for (i=0;i<4;i++)
          {
-            int mixcanal = Mix_Array[2*i+1];
+            uint8_t mixcanal = Mix_Array[2*i];
             if (mixcanal ^ 0x88) // 88 bedeutet OFF
             {
-               int mixart = Mix_Array[2*i] & 0x07;
-               int canala = mixcanal & 0x07;
-               int canalb = (mixcanal & 0x70) >>4;
+               uint8_t mixart = Mix_Array[2*i+1] & 0x07;
+               uint8_t canala = mixcanal & 0x07;
+               uint8_t canalb = (mixcanal & 0x70) >>4;
                switch (mixart) // mixart ist gesetzt
                {
                   case 1: // V-Mix
                   {
-                     int canalwerta = Servo_ArrayInt[canala];// Wert fuer ersten Kanal
-                     int canalwertb = Servo_ArrayInt[canalb];// Wert fuer zweiten Kanal
+                     canalwerta = Servo_ArrayInt[canala];// Wert fuer ersten Kanal
+                     canalwertb = Servo_ArrayInt[canalb];// Wert fuer zweiten Kanal
                      
                      Servo_ArrayInt[canala] = canalwerta + canalwertb;
                      Servo_ArrayInt[canalb] = canalwerta - canalwertb;
@@ -1035,14 +1085,15 @@ int main (void)
             }
          }
          
+         
          // Mitte addieren
          for (i=0;i<8;i++)
          {
             Servo_ArrayInt[i] += Mitte_Array[i];
          }
          
-         
          sei();
+         
          
          if ((eepromstatus & (1<<EE_WRITE))) // write an eeprom
          {
@@ -1145,18 +1196,19 @@ int main (void)
             {
                
                cli();
+              
                SPI_RAM_init();
                
                spiram_init();
                
-               _delay_us(100);
+               _delay_us(1);
                // statusregister schreiben
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                spiram_write_status(0x00);
                _delay_us(LOOPDELAY);
                RAM_CS_HI; // SS HI End
-               _delay_us(100);
+               _delay_us(1);
                
                // Kontrolle: testdata in-out
                RAM_CS_LO;
@@ -1170,7 +1222,14 @@ int main (void)
                //OSZI_A_LO ;
                for (i=0;i< 8;i++)
                {
-                  RAM_CS_LO;
+                  if (INT)
+                  {
+                     
+                  }
+                  
+                  else
+                  {
+                   RAM_CS_LO;
                   _delay_us(LOOPDELAY);
                   spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
                   //spiram_wrbyte(2*i, sendbuffer[8+2*i]);
@@ -1182,32 +1241,66 @@ int main (void)
                   spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
                   //spiram_wrbyte(2*i+1, sendbuffer[8+2*i+1]);
                   RAM_CS_HI;
+                  }
                   
                }
                
+               
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(16, Servo_Array[0] & 0x00FF);
+               spiram_wrbyte(16, Servo_ArrayInt[0] & 0x00FF);
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(16+1, (Servo_Array[0] & 0xFF00)>>8);
+               spiram_wrbyte(16+1, (Servo_ArrayInt[0] & 0xFF00)>>8);
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(18, Servo_Array[1] & 0x00FF);
+               spiram_wrbyte(18, Servo_ArrayInt[1] & 0x00FF);
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               spiram_wrbyte(18+1, (Servo_Array[1] & 0xFF00)>>8);
+               spiram_wrbyte(18+1, (Servo_ArrayInt[1] & 0xFF00)>>8);
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
+               
+
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(20, (canalwerta+MITTE) & 0xFF);// canala
+
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(20+1, ((canalwerta+MITTE) & 0xFF00)>>8);
+               //spiram_wrbyte(20+1, (Mix_Array[0] & 0x70)>>4);// canalb
+               
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(22, ((canalwertb+MITTE) & 0xFF));
+               //spiram_wrbyte(22, Mix_Array[0]);// canals
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+               
+               RAM_CS_LO;
+               _delay_us(LOOPDELAY);
+               spiram_wrbyte(22+1, ((canalwertb+MITTE) & 0xFF00)>>8);
+               //spiram_wrbyte(22+1, Mix_Array[1]);// mixart
+               RAM_CS_HI;
+               _delay_us(LOOPDELAY);
+
+               
                
                
                // ADC-Daten schicken
@@ -1382,16 +1475,20 @@ int main (void)
                {
                   
                   // timer2Counter=0;
-                  //lcd_gotoxy(0,0);
+                  /*
+                  lcd_gotoxy(6,0);
                   
-                  //lcd_putint12(timer2Counter);
-                  
+                  lcd_putint12(Servo_ArrayInt[0]);
+                  lcd_putc(' ');
+                  lcd_putint12(Servo_ArrayInt[1]);
+                  lcd_putc(' ');
                   //lcd_putc('*');
                   
                   //lcd_putint(testdata);
                   //lcd_putc('*');
                   //lcd_putint(ram_indata);
                   //lcd_putc('+');
+                   */
                   if  (masterstatus & (1<<ALARM_BIT))
                   {
                      masterstatus &= ~(1<<ALARM_BIT);

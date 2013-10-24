@@ -28,9 +28,9 @@
 // code:  http://www.mikrocontroller.net/attachment/164871/25LC128.c
 
 
-#define EEDELAY 50
+#define EEDELAY 10
 
-#define EE_READ_DELAY 0
+#define EE_READ_DELAY 10
 
 /*
  uint8_t spi_send(uint8_t value)
