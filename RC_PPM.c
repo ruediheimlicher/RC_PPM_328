@@ -1224,28 +1224,36 @@ int main (void)
                {
                   if (INT)
                   {
+                     RAM_CS_LO;
+                     _delay_us(LOOPDELAY);
+                     spiram_wrbyte(2*i, Servo_ArrayInt[i] & 0x00FF);
+                     
+                     RAM_CS_HI;
+                     _delay_us(LOOPDELAY);
+                     RAM_CS_LO;
+                     _delay_us(LOOPDELAY);
+                     spiram_wrbyte(2*i+1, (Servo_ArrayInt[i] & 0xFF00)>>8);
+                     RAM_CS_HI;
+                     
                      
                   }
                   
                   else
                   {
-                   RAM_CS_LO;
-                  _delay_us(LOOPDELAY);
-                  spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
-                  //spiram_wrbyte(2*i, sendbuffer[8+2*i]);
-                  
-                  RAM_CS_HI;
-                  _delay_us(LOOPDELAY);
-                  RAM_CS_LO;
-                  _delay_us(LOOPDELAY);
-                  spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
-                  //spiram_wrbyte(2*i+1, sendbuffer[8+2*i+1]);
-                  RAM_CS_HI;
+                     RAM_CS_LO;
+                     _delay_us(LOOPDELAY);
+                     spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
+                     RAM_CS_HI;
+                     _delay_us(LOOPDELAY);
+                     RAM_CS_LO;
+                     _delay_us(LOOPDELAY);
+                     spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
+                     RAM_CS_HI;
                   }
                   
                }
                
-               
+               /*
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                spiram_wrbyte(16, Servo_ArrayInt[0] & 0x00FF);
@@ -1300,11 +1308,11 @@ int main (void)
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
 
-               
+               */
                
                
                // ADC-Daten schicken
-               
+               /*
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
                OSZI_A_LO;
@@ -1318,7 +1326,7 @@ int main (void)
                spiram_wrbyte(0x3F, adcdata & 0xFF);
                //     OSZI_A_HI;
                RAM_CS_HI;
-               
+               */
                
                // Diff-Daten schicken
                /*
@@ -1527,12 +1535,6 @@ int main (void)
                {
                   //      abschnittnummer=0; // nach Master-Vorgang Position des Counters fuer PageWrite zuruecksetzen
                }
-               //PORTD &= ~(1<<PORTD5); //  LO
-               
-               
-               //timer1_stop();
-               
-               
                //OSZI_A_HI ;
                
             } // if busy_pin

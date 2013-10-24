@@ -31,8 +31,8 @@ void MCP3208_spi_Init(void)
    // CPOL=1 : CPHA=1
    SPCR=0;
    SPCR = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<CPHA);
-   SPCR |= (1<<SPR0);
-   //SPCR |= (1<<SPR1);
+  // SPCR |= (1<<SPR0); // f/16
+   //SPCR |= (1<<SPR1); // f/64
    
    SPI_PORT |= (1<<(SPI_SS_PIN));    //setbitHigh CS   Pin
    SPI_PORT |= (1<<(SPI_MOSI_PIN));  //setbitHigh MOSI Pin
