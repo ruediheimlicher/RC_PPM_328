@@ -734,7 +734,7 @@ int main (void)
    //versionint >>=8;
    volatile uint8_t versioninth = (versionint & 0xFF00)>>8;
    
-   eepromstatus |= (1<<EE_READ_SETTINGS); // Settings lesen beim Start
+   //eepromstatus |= (1<<EE_READ_SETTINGS); // Settings lesen beim Start
    
    uint8_t anzeigecounter=0;
    
@@ -762,7 +762,7 @@ int main (void)
          // Messung anzeigen
          if (loopcount1%0x2F == 0)
          {
-            
+            //eepromstatus |= (1<<EE_READ_SETTINGS); // Settings lesen beim Start
             //lcd_gotoxy(0,1);
             /*
             lcd_putint12(adcdata);
@@ -943,11 +943,25 @@ int main (void)
                // start signed int
                
                diffdataInt = diffdatalo | (diffdatahi <<8);
-               if (adcdata < mitte)
+               
+               if (adcdata > mitte) // positiver Wert
+               {
+                  diffdataInt *= (8-levela);
+                  diffdataInt /= 8;
+               
+               }
+               else // negativer Wert
+               {
+                  diffdataInt *= (8-levelb);
+                  diffdataInt /= 8;
+                  
+                  diffdataInt *= (-1);
+               }
+               if (richtung) // Richtung umkehren
                {
                   diffdataInt *= (-1);
                }
-               
+               Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
                
                
                // end signed int
@@ -1000,10 +1014,31 @@ int main (void)
          // Mix_Array: data0:
          for (i=0;i<4;i++)
          {
-            if (Mix_Array[2*i] & 0x07) // mixart ist gesetzt
+            int mixcanal = Mix_Array[2*i+1];
+            if (mixcanal ^ 0x88) // 88 bedeutet OFF
             {
-               
+               int mixart = Mix_Array[2*i] & 0x07;
+               int canala = mixcanal & 0x07;
+               int canalb = (mixcanal & 0x70) >>4;
+               switch (mixart) // mixart ist gesetzt
+               {
+                  case 1: // V-Mix
+                  {
+                     int canalwerta = Servo_ArrayInt[canala];// Wert fuer ersten Kanal
+                     int canalwertb = Servo_ArrayInt[canalb];// Wert fuer zweiten Kanal
+                     
+                     Servo_ArrayInt[canala] = canalwerta + canalwertb;
+                     Servo_ArrayInt[canalb] = canalwerta - canalwertb;
+                  
+                  }break;
+               } // switch
             }
+         }
+         
+         // Mitte addieren
+         for (i=0;i<8;i++)
+         {
+            Servo_ArrayInt[i] += Mitte_Array[i];
          }
          
          
@@ -1261,6 +1296,7 @@ int main (void)
                   lcd_puthex(task_counter);
                   lcd_putc('+');
                   lcd_clr_line(1);
+                  
                   
                   readSettings(task_indata);
                   

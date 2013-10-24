@@ -88,7 +88,7 @@
 #define SUB_END_BIT         2 // Slave ist fertig
 
 #define ALARM_PIN         7 // toggle Alarm
-#define ALARM_BIT         7 // toggle Alarm
+#define ALARM_BIT         6 // toggle Alarm
 
 #define SUB_TASK_BIT         3 // Slave hat Aufgaben
 
@@ -160,6 +160,8 @@
 #define POT_START 0  //    Start Messung Potentiometer
 
 #define SPI_START 2  //    Start SPI auf diesem Device
+
+
 
 #define SPI_END   3  //    End SPI auf diesem Device
 
