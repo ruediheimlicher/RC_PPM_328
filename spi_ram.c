@@ -82,7 +82,6 @@ uint8_t spiram_getmode(void)
   
    spi_send(0x05);; // 0x05
    uint8_t mode = spi_send(0xFF);
-  
    
    return mode;
 }

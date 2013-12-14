@@ -103,6 +103,7 @@ volatile int16_t             canalwerta=0;
 volatile int16_t             canalwertb=0;
 volatile uint8_t           mixcanal=0;
 
+volatile uint16_t mitte = 0;
 volatile uint16_t adcdata=0;
 volatile uint16_t diffdata=0;
 volatile uint8_t diffdatalo=0;
@@ -121,6 +122,10 @@ volatile    uint8_t task_indata=0; // Taskdata von RC_LCD
 volatile    uint8_t task_out=0; // Task an RC_LCD
 volatile    uint8_t task_outdata=0; // Taskdata an RC_LCD
 volatile    uint8_t task_counter=0;
+
+
+volatile uint16_t testdata1=0;
+volatile uint16_t testdata2=0;
 
 void startTimer2(void)
 {
@@ -347,8 +352,6 @@ void timer1_init(void)
    KANAL_HI;
    
    impulscounter = 0;
-   //OCR1A  = POT_FAKTOR*POT_Array[1];
-   //OCR1A  = POT_FAKTOR*POT_Array[impulscounter];
    
    if (INT)
    {
@@ -411,8 +414,6 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       
       // Laenge des naechsten Impuls setzen
       
-      //OCR1A  = POT_FAKTOR*POT_Array[1]; // 18 us
-      //OCR1A  = POT_FAKTOR*POT_Array[impulscounter]; // 18 us
       
       if (INT)
       {
@@ -481,7 +482,7 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
    
 }
 
-
+#pragma mark timer1 COMPB-vect
 ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
 {
    //OSZI_A_LO ;
@@ -491,6 +492,7 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
    
    if (impulscounter < ANZ_POT)
    {
+      
    }
    else
    {
@@ -542,11 +544,12 @@ void timer2 (uint8_t wert)
 
 volatile uint16_t timer2Counter=0;
 volatile uint16_t timer2BatterieCounter=0;
+#pragma mark timer2 OVF-vect
 
-ISR (TIMER2_OVF_vect) 
+ISR (TIMER2_OVF_vect)
 { 
 	timer2Counter ++;
-   if (timer2Counter >= 0x01A0) // Laenge des Impulspakets 20ms Atmega328
+   if (timer2Counter >= 0x01E0) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
       
@@ -582,7 +585,7 @@ ISR(TIMER2_COMP_vect) // Schaltet Impuls an SERVOPIN0 aus
 
 //https://sites.google.com/site/qeewiki/books/avr-guide/external-interrupts-on-the-atmega328
 
-
+#pragma mark PCINT0-vect
 ISR (PCINT0_vect)
 {
    
@@ -630,6 +633,7 @@ void readSettings(uint8_t modelindex)
     for (pos=0;pos<8;pos++)
     {
        Expo_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+       
     }
    
    // Mix lesen
@@ -668,20 +672,6 @@ void readSettings(uint8_t modelindex)
 
 
    lcd_putc('+');
-  
-   uint8_t levela = Level_Array[0]& 0x07;
-   uint8_t levelb = (Level_Array[0]& 0x70)>>4;
-   
-   /*
-   lcd_gotoxy(6,1);
-   lcd_putc('A');
-   
-   lcd_puthex(levela);
-    lcd_putc(' ');
-   lcd_putc('B');
-   
-   lcd_puthex(levelb);
-    */
 
 }
 
@@ -694,12 +684,6 @@ int main (void)
 	// set for 16 MHz clock
 	CPU_PRESCALE(0);
     
-	// Initialize the USB, and then wait for the host to set configuration.
-	// If the Teensy is powered without a PC connected to the USB port,
-	// this will wait forever.
-   
-	// Wait an extra second for the PC's operating system to load drivers
-	// and do whatever it does to actually be ready for input
 	_delay_ms(100);
 
 	sei();
@@ -752,25 +736,11 @@ int main (void)
 	uint16_t loopcount0=0;
 	uint8_t loopcount1=0;
 
-	
-	
-	
-	/*
-	Bit 0: 1 wenn wdt ausgelöst wurde
-	 
-	  */ 
 	uint8_t i=0;
    
    timer2_init();
 
    sei();
-   
-   PWM = 0;
-   uint8_t n=0;
-   for (n=0;n<8;n++)
-   {
-      Mitte_Array[n] = MITTE;
-   }
    
    char* versionstring = (char*) malloc(4);
    strncpy(versionstring, VERSION+9, 3);
@@ -784,12 +754,22 @@ int main (void)
    
    uint8_t anzeigecounter=0;
    
+   // Pot-Array, Mitte-Array  initialisieren
+   for(i=0;i< 8;i++)
+   {
+      Mitte_Array[i] = MITTE;
+      POT_Array[i] = 0x600;
+     
+   }
+//   potstatus |= (1<< POT_MITTE);
+   //readSettings(0);
+   
 // MARK: while
 	while (1)
 	{
       //OSZI_B_LO;
 		//Blinkanzeige
-		loopcount0+=1;
+		loopcount0++;
 		if (loopcount0==0x4FFF)
 		{
 			loopcount0=0;
@@ -809,6 +789,7 @@ int main (void)
          if (loopcount1%0x2F == 0)
          {
             //eepromstatus |= (1<<EE_READ_SETTINGS); // Settings lesen beim Start
+            
             //lcd_gotoxy(0,1);
             /*
             lcd_putint12(adcdata);
@@ -830,14 +811,6 @@ int main (void)
              */
          }
          
-         // neue Daten in sendbuffer
-         for (int i=0;i<8;i++)
-         {
-            sendbuffer[8+2*i]=(POT_Array[i] & 0xFF);        // 8  10 12
-            sendbuffer[8+2*i+1]= (POT_Array[i]>>8) & 0xFF;  // 9  11 13
-         }
-         //OSZI_B_LO;
-         
           
 		//OSZI_B_HI;
       } // if loopcount0
@@ -850,7 +823,7 @@ int main (void)
       }
       else
       {
-         OSZI_A_TOGG ;
+         //OSZI_A_TOGG ;
          
          spi_end();
          masterstatus |= (1<<HALT);
@@ -867,7 +840,10 @@ int main (void)
 
      if (adcstatus & (1<< ADC_START)) // ADC starten
       {
-       }
+      }
+      
+      
+      /**	Kanaele	***********************/
       
       if (potstatus & (1<< SPI_START)) // SPI starten, in TIMER2_OVF_vect gesetzt
       {
@@ -883,24 +859,25 @@ int main (void)
          
          //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
          {
+            // ADC init, Pot lesen
             spi_start();
-             SPI_ADC_init();
+            SPI_ADC_init();
             spiadc_init();
+            // MARK: Pot lesen
             
             for(i=0;i< ANZ_POT;i++)
             {
                
-               if ((i<2) )
+               if ((i<4) )
                {
                   
                   //POT_Array[i] = 0x600;
-                  
+                  //OSZI_A_LO ;
                   cli();
-                  POT_Array[i] = POT_FAKTOR*MCP3208_spiRead(SingleEnd,i);
+                  //POT_Array[i] = POT_FAKTOR * MCP3208_spiRead(SingleEnd,i); // globaler Korr.Faktor fuer Servowert
+                  POT_Array[i] = MCP3208_spiRead(SingleEnd,i)*3/4; // globaler Korr.Faktor fuer Servowert
                   sei();
-                  // POT_Array[i] = 0x600;
-                  
-                  
+                  //OSZI_A_HI ;
                   if (POT_Array[i]==0)
                   {
                      //OSZI_A_LO ;
@@ -909,13 +886,14 @@ int main (void)
                      
                      POT_Array[i] = 0x600;
                      
+                     //OSZI_A_HI ;
                   }
-                  
+                  //POT_Array[i] = 0x600;
                   // Filter
                   //POT_Array[i] = 3*POT_Array[i]/4 + (MCP3208_spiRead(SingleEnd,i)/4);
                   //POT_Array[i] = POT_FAKTOR*(1*POT_Array[i]/2 + (MCP3208_spiRead(SingleEnd,i)/2));
                   _delay_us(2); // war mal 100
-                  //OSZI_A_HI ;
+                  
                }
                else
                {
@@ -947,53 +925,72 @@ int main (void)
          spieeprom_init();
          cli();
          
-         // Servodaten aufbereiten ohne Mix
+         
+         // MARK Servodaten aufbereiten
+         
+         //OSZI_A_LO ;
          for(i=0;i< 8;i++)
          {
-            if ((i < 6) ) // 2 Steuerknueppel und 2 Schieber
+            if ((i < 2) ) // 2 Steuerknueppel und 2 Schieber
             {
+               
+               // Level fuer beide Seiten nach Settings
                uint8_t levela = Level_Array[i]& 0x0F;
                uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
                
-               uint8_t richtung = Expo_Array[i] & 0x80; // bit 7
+               // Richting aus Settings
+               uint8_t richtung = Expo_Array[i] & 0x80 >>7; // bit 7
                
+               // Expo-Stufe aus Settings
                uint8_t stufea = Expo_Array[i] & 0x03;
                uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
-                              
-               uint16_t mitte = Mitte_Array[i];
                
-               diff=mitte;
-               adcdata = POT_Array[i];
+               // Mitte aus Settings
+               mitte = Mitte_Array[i];
+              
+               diff= mitte;
+               adcdata = POT_Array[i]; // gemessener Potwert
+               
                stufe = 0;
                
+               //OSZI_A_LO ;
+               // Wert fuer adcdata an Adresse in EEPROM lesen, 2 bytes
+               // diff: adcwert - mitte. Auf der einen Seite addieren, auf der anderen subtrahieren
                if (adcdata > mitte) // Seite A
                {
+                  
                   diff = adcdata - mitte;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
-                  
-                  
+                  testdata1 = adcdata;
+                  testdata2=0;
                }
                else // Seite B
                {
+                  
                   diff = mitte - adcdata;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
+                  
+                  testdata2 =adcdata;
+                  testdata1=0;
                }
-               // MARK: Integer
                
+               
+                              // MARK: Integerberechnungen
+               //OSZI_A_HI ;
                // start signed int
                
                if (INT)
                {
+                  // 16bit-wert
                   diffdataInt = diffdatalo | (diffdatahi <<8);
                   
-                  
+                  // level anpassen an Settings. Erst mult, dann div
                   if (adcdata > mitte) // positiver Wert
                   {
-                     diffdataInt *= (8-levela);
+                     diffdataInt *= (8-levela); // levela fuer linear ist 0, also mult mit 1
                      diffdataInt /= 8;
-                     
                   }
                   else // negativer Wert
                   {
@@ -1002,21 +999,24 @@ int main (void)
                      
                      diffdataInt *= (-1);
                   }
+                  
                   if (richtung) // Richtung umkehren
                   {
                      diffdataInt *= (-1);
                   }
                   
+                  // Wert speichern, nachher in Mix weiter anpassen
                   Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
-                  
                   
                   // end signed int
                }
+               /*
                else
                {
                   
                   diffdata = diffdatalo | (diffdatahi <<8);
                   
+                   
                   if ((adcdata > mitte) )
                   {
                      diffdata *= (8-levela);
@@ -1030,8 +1030,7 @@ int main (void)
                      {
                         Servo_Array[i] = mitte + diffdata;
                      }
-                     
-                     
+                      
                   }
                   else
                   {
@@ -1048,35 +1047,38 @@ int main (void)
                      }
                   }
                }
+                */
                
-               if (diffdata == 0)
-               {
-                  //diffdata = 0x100;
-               }
-            }
+             }
             
          }// for i
-         
-         
+         //OSZI_A_HI ;
          // Servodaten mit Mix verarbeiten
          // Mix_Array 0: canals
          // Mix_Array 1: mixart
          
-         for (i=0;i<4;i++)
+         
+         for (i=0;i<4;i++) // 50 us
          {
+            // Mixing lesen
+            
             uint8_t mixcanal = Mix_Array[2*i];
             if (mixcanal ^ 0x88) // 88 bedeutet OFF
             {
-               uint8_t mixart = Mix_Array[2*i+1] & 0x07;
-               uint8_t canala = mixcanal & 0x07;
-               uint8_t canalb = (mixcanal & 0x70) >>4;
+               // Setting nicht OFF
+               uint8_t mixart = Mix_Array[2*i+1] & 0x07; // Art des mixings
+               uint8_t canala = mixcanal & 0x07;         // beteiligter erster Kanal
+               uint8_t canalb = (mixcanal & 0x70) >>4;   // beteiligter zweiter Kanal
+               
                switch (mixart) // mixart ist gesetzt
                {
                   case 1: // V-Mix
                   {
+                     // Originalwert fuer jeden Kanal lesen
                      canalwerta = Servo_ArrayInt[canala];// Wert fuer ersten Kanal
                      canalwertb = Servo_ArrayInt[canalb];// Wert fuer zweiten Kanal
                      
+                     // Wert mixen und neu speichern
                      Servo_ArrayInt[canala] = canalwerta + canalwertb;
                      Servo_ArrayInt[canalb] = canalwerta - canalwertb;
                   
@@ -1091,11 +1093,10 @@ int main (void)
          {
             Servo_ArrayInt[i] += Mitte_Array[i];
          }
-         
          sei();
          
          
-         if ((eepromstatus & (1<<EE_WRITE))) // write an eeprom
+         if ((eepromstatus & (1<<EE_WRITE))) // eventuell write an eeprom
          {
             
             eepromstatus &= ~(1<<EE_WRITE);
@@ -1194,11 +1195,9 @@ int main (void)
          {
             //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
             {
-               
+               // Werte in RAM speichern, zum Auslesen fuer Sub und Interface
                cli();
-              
                SPI_RAM_init();
-               
                spiram_init();
                
                _delay_us(1);
@@ -1230,9 +1229,13 @@ int main (void)
                      
                      RAM_CS_HI;
                      _delay_us(LOOPDELAY);
+                     
+                     
+                     
                      RAM_CS_LO;
                      _delay_us(LOOPDELAY);
                      spiram_wrbyte(2*i+1, (Servo_ArrayInt[i] & 0xFF00)>>8);
+                     _delay_us(LOOPDELAY);
                      RAM_CS_HI;
                      
                      
@@ -1240,6 +1243,7 @@ int main (void)
                   
                   else
                   {
+                     /*
                      RAM_CS_LO;
                      _delay_us(LOOPDELAY);
                      spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
@@ -1249,6 +1253,7 @@ int main (void)
                      _delay_us(LOOPDELAY);
                      spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
                      RAM_CS_HI;
+                      */
                   }
                   
                }
@@ -1315,14 +1320,12 @@ int main (void)
                /*
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               OSZI_A_LO;
                spiram_wrbyte(0x3E, adcdata & 0xFF);
                //     OSZI_A_HI;
                RAM_CS_HI;
                _delay_us(LOOPDELAY);
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               OSZI_A_LO;
                spiram_wrbyte(0x3F, adcdata & 0xFF);
                //     OSZI_A_HI;
                RAM_CS_HI;
@@ -1332,7 +1335,6 @@ int main (void)
                /*
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               OSZI_A_LO;
                spiram_wrbyte(0x3C, diff & 0xFF);
                //spiram_wrbyte(0x20, 17);
                //     OSZI_A_HI;
@@ -1407,23 +1409,18 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   RAM_CS_LO;
                   spiram_wrbyte(READ_TASKADRESSE, 0);
-                  OSZI_A_HI;
+                  //OSZI_A_HI;
                   RAM_CS_HI;
-
                
                }
-
                
+               // eventuelle Taskdaten schreiben
                
-               // Taskdaten schreiben
                _delay_us(LOOPDELAY);
                RAM_CS_LO;
                spiram_wrbyte(WRITE_TASKADRESSE, task_outdata);
-               OSZI_A_HI;
+               //OSZI_A_HI;
                RAM_CS_HI;
-               
-               
-               
                
                
                // Kontrolle
@@ -1456,7 +1453,7 @@ int main (void)
                spiram_write_status(0x00);
                _delay_us(LOOPDELAY);
                RAM_CS_HI; // SS HI End
-               _delay_us(2);
+               _delay_us(LOOPDELAY);
                
                // err
                RAM_CS_LO;
@@ -1468,7 +1465,7 @@ int main (void)
                RAM_CS_HI;
                
                
-               _delay_us(2);
+               _delay_us(LOOPDELAY);
                
                /*
                 RAM_CS_LO;
@@ -1479,7 +1476,7 @@ int main (void)
                 RAM_CS_HI;
                 */
                // Daten aendern
-               if (outcounter%0x40 == 0)
+               if (outcounter%0x40 == 0) // ab und zu Fehler melden
                {
                   
                   // timer2Counter=0;
@@ -1508,7 +1505,7 @@ int main (void)
                   }
                   
                   testdata++;
-                  testaddress = 0xFF;
+                  testaddress = 0xF0;
                   //testaddress--;
                   
                   
@@ -1516,14 +1513,14 @@ int main (void)
                outcounter++;
                
                _delay_us(LOOPDELAY);
-               
                // end Daten an RAM
-               
-               
+ 
                // EEPROM Test
                
                
                //spi_end();
+               // MARK: timer1 Start
+               // Berechnungen fertig, Timer1 fuer Summensignal starten
                sei();
                // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen Vorgängen
                {
@@ -1547,7 +1544,7 @@ int main (void)
       {
          potstatus &= ~(1<< SPI_END);
          //spi_end();
-         _delay_us(20);
+         _delay_us(LOOPDELAY);
       }
 
       
@@ -1596,13 +1593,7 @@ int main (void)
 					Tastencount=0;
                if (TastenStatus & (1<<TASTE0))
                {
-                  //sendbuffer[0]=loopcount1;
-                  //sendbuffer[1]=0xAB;
-                  //usbstatus |= (1<<USB_RECV);
-                  //lcd_gotoxy(2,1);
-                  //lcd_putc('1');
-
-                  //usb_rawhid_send((void*)sendbuffer, 50);
+ 
                }
 					TastenStatus &= ~(1<<TASTE0);
                //lcd_gotoxy(3,1);
@@ -1617,42 +1608,7 @@ int main (void)
 			}//else
 			
 		}	// Taste 0
-		
-         
-		
-		if (!(TASTENPIN & (1<<TASTE1))) // Taste 1
-		{
-			//lcd_gotoxy(12,1);
-			//lcd_puts("T1 Down\0");
-			
-			if (! (TastenStatus & (1<<TASTE1))) //Taste 1 war nicht nicht gedrueckt
-			{
-				TastenStatus |= (1<<TASTE1);
-				Tastencount=0;
-				//lcd_gotoxy(3,1);
-				//lcd_puts("P1 \0");
-				//lcd_putint(Servoimpulsdauer);
-				//delay_ms(800);
 				
-			}
-			else
-			{
-				//lcd_gotoxy(3,1);
-				//lcd_puts("       \0");
-				
-				Tastencount +=1;
-				if (Tastencount >= Tastenprellen)
-				{
-					
-					
-					Tastencount=0;
-					TastenStatus &= ~(1<<TASTE1);
-					
-				}
-			}//	else
-			
-		} // Taste 1
-		
 		/* ******************** */
 		//		initADC(TASTATURPIN);
 		//		Tastenwert=(uint8_t)(readKanal(TASTATURPIN)>>2);

@@ -67,51 +67,51 @@
 #define WDTBIT                   7
 
 // CNC12
-#define CMD_PORT            PORTD   //    PORTB
-#define CMD_DDR             DDRD    //    DDRB
-#define CMD_PIN             PIND    //    PINB
+#define CMD_PORT              PORTD   //    PORTB
+#define CMD_DDR               DDRD    //    DDRB
+#define CMD_PIN               PIND    //    PINB
 
-#define EXTERN_PORT          PORTD
-#define EXTERN_PIN           PIND
+#define EXTERN_PORT           PORTD
+#define EXTERN_PIN            PIND
 
-#define INT0_PIN           2
+#define INT0_PIN              2
 
 
 
-#define MASTER_PORT        PORTB   //    PORTB
-#define MASTER_DDR         DDRB    //    DDRB
-#define MASTER_PIN         PINB
+#define MASTER_PORT           PORTB   //    PORTB
+#define MASTER_DDR            DDRB    //    DDRB
+#define MASTER_PIN            PINB
 
 #define MASTER_EN_PIN         7 // Mit PinChange-Interrupt
 #define MASTER_EN_BIT         0 // Master erlaubt SPI
-#define SUB_START_BIT       1 // Slave kann starten
-#define SUB_END_BIT         2 // Slave ist fertig
+#define SUB_START_BIT         1 // Slave kann starten
+#define SUB_END_BIT           2 // Slave ist fertig
 
-#define ALARM_PIN         7 // toggle Alarm
-#define ALARM_BIT         6 // toggle Alarm
+#define ALARM_PIN             7 // toggle Alarm
+#define ALARM_BIT             6 // toggle Alarm
 
-#define SUB_TASK_BIT         3 // Slave hat Aufgaben
+#define SUB_TASK_BIT          3  // Slave hat Aufgaben
 
-#define SUB_LCD_BIT         4 // Slave soll auf LCD schreiben
+#define SUB_LCD_BIT           4 // Slave soll auf LCD schreiben
 
 
 #define SUB_BUSY_PIN          6 // Sub ist busy
 #define SUB_BUSY_BIT          6 // Sub ist busy
 
-#define SUB_EN_PIN          7 // Sub ist enabled
+#define SUB_EN_PIN            7 // Sub ist enabled
 
          
 #define MASTER_EN_HI           MASTER_PORT & (1<<MASTER_EN_PIN)
 
 // RAM
-#define TASK_OFFSET       0x2000 // Ort fuer Einstellungen
+#define TASK_OFFSET           0x2000 // Speicherort fuer Einstellungen
 
-#define SETTINGBREITE      0x100; // 256 Bytes, Breite des Settingblocks fuer ein model
+//#define SETTINGBREITE      0x100; // 256 Bytes, Breite des Settingblocks fuer ein model
 
-#define  MITTE_OFFSET      0x10 // 16
-#define  LEVEL_OFFSET      0x20 // 32
-#define  EXPO_OFFSET       0x30 // 48
-#define  MIX_OFFSET        0x40 // 64
+#define  MITTE_OFFSET         0x10 // 16
+//#define  LEVEL_OFFSET      0x20 // 32
+//#define  EXPO_OFFSET       0x30 // 48
+#define  MIX_OFFSET           0x40 // 64
 
 
 // ADC
@@ -167,9 +167,9 @@
 
 #define POT_MITTE 7  //    Mittelwerte der Potentiometer speichern
 
-#define ANZ_POT   6
+#define ANZ_POT   8
 
-#define POT_FAKTOR 0.6
+#define POT_FAKTOR 0.75
 
 
 #define TASTENDDR           DDRD

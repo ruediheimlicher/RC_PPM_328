@@ -16,6 +16,7 @@
 //NOTE: the CS pin on the 23K256 must be brought low before every function
 //  call and subsequently brought high after every funcion call. I don't do
 //  that in this library so you'll have to do it yourself.
+// >> hier erledigt
 
 
 // https://github.com/rememberthe8bit/AVR-libraries/blob/master/spi/spi.c
@@ -30,7 +31,7 @@
 
 #define EEDELAY 10
 
-#define EE_READ_DELAY 10
+#define EE_READ_DELAY 1
 
 /*
  uint8_t spi_send(uint8_t value)
@@ -58,7 +59,7 @@ void spieeprom_init()
 {
    
    SPCR=0;
-   SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0)|(1<<SPR1);
+   SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);//|(1<<SPR1); // SPR0: f/16  SPR1: f/64 Beide: f/128
    
    // CPOL 0, CPHA 0 > CKE 1 (Microchip bezeichnung)
    
@@ -69,11 +70,8 @@ void spieeprom_init()
 
 uint8_t spieeprom_getmode(void)
 {
-   
    spi_send(0x05);; // 0x05
    uint8_t mode = spi_send(0xFF);
-   
-   
    return mode;
 }
 
@@ -100,10 +98,7 @@ void spieeprom_write_status()
    spi_send(00);
    _delay_us(EEDELAY);
    EE_CS_HI;
-   
-   
 }
-
 
 // Nach WREN WRITE schicken und msb (02, xy)
 void spieeprom_writecmd(uint8_t addr)
@@ -171,9 +166,6 @@ void spieeprom_wrpage_data(uint8_t data)
    
 }
 
-
-
-
 //read a memory location
 // uint16_t addr - the address to read from
 // returns uint8_t - the data read
@@ -183,6 +175,7 @@ uint8_t spieeprom_rdbyte(uint16_t addr)
    uint8_t result = 0x00;
    //  _delay_us(EEDELAY);
    //send read instruction
+   _delay_us(EE_READ_DELAY);
    spi_send(0x03);
    _delay_us(EE_READ_DELAY);
    //send address
@@ -235,8 +228,6 @@ uint8_t spieeprom_rdpage_data()
 //  uint16_t length - the number of bytes to be written from the array
 
 void spieeprom_wrpage(uint16_t startaddr, const volatile uint8_t* data)
-
-//void spieeprom_wrpage(uint16_t startaddr, const char* data)
 {
    uint16_t i;
    
@@ -272,8 +263,6 @@ void spieeprom_rdpage(uint16_t startaddr, volatile uint8_t* data)
       data[i] = spi_send(0x77);
    }
 }
-
-
 
 uint8_t spieeprom_read_status()
 {
