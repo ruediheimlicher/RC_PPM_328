@@ -78,7 +78,6 @@ static volatile uint8_t    pwmdivider=0;
 volatile char              SPI_data='0';
 volatile char              SPI_dataArray[SPI_BUFSIZE];
 volatile uint16_t          POT_Array[SPI_BUFSIZE];
-volatile uint16_t          Servo_Array[SPI_BUFSIZE];
 
 volatile int16_t          Servo_ArrayInt[SPI_BUFSIZE]; // signed Int
 
@@ -103,6 +102,7 @@ volatile int16_t             canalwerta=0;
 volatile int16_t             canalwertb=0;
 volatile uint8_t           mixcanal=0;
 
+volatile uint8_t richtung=0;
 volatile uint16_t mitte = 0;
 volatile uint16_t adcdata=0;
 volatile uint16_t diffdata=0;
@@ -111,7 +111,7 @@ volatile uint8_t diffdatahi=0;
 
 volatile int16_t diffdataInt=0;
 
-volatile uint16_t diff =0;
+volatile int16_t diff =0;
 
 volatile uint8_t stufe=0;
 
@@ -124,8 +124,8 @@ volatile    uint8_t task_outdata=0; // Taskdata an RC_LCD
 volatile    uint8_t task_counter=0;
 
 
-volatile uint16_t testdata1=0;
-volatile uint16_t testdata2=0;
+volatile uint8_t testdataarray[8]={};
+volatile uint16_t teststartadresse=0x00A0;
 
 void startTimer2(void)
 {
@@ -353,8 +353,6 @@ void timer1_init(void)
    
    impulscounter = 0;
    
-   if (INT)
-   {
       if (Servo_ArrayInt[impulscounter] > SERVOMAX)
       {
          Servo_ArrayInt[impulscounter] = SERVOMAX;
@@ -368,25 +366,7 @@ void timer1_init(void)
       
       OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
       
-   }
-   else
-   {
-      
-      if (Servo_Array[impulscounter] > SERVOMAX)
-      {
-         Servo_Array[impulscounter] = SERVOMAX;
-      }
-      
-      if (Servo_Array[impulscounter]<  SERVOMIN)
-      {
-         Servo_Array[impulscounter] = SERVOMIN;
-      }
-      
-      
-      OCR1A  = Servo_Array[impulscounter]; //
-   }
-   
-
+ 
 
 } // end timer1
 
@@ -415,9 +395,6 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       // Laenge des naechsten Impuls setzen
       
       
-      if (INT)
-      {
-         
          if (Servo_ArrayInt[impulscounter] > SERVOMAX)
          {
             Servo_ArrayInt[impulscounter] = SERVOMAX;
@@ -430,24 +407,6 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
          
          
          OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
-         
-      }
-      else
-      {
-         
-         if (Servo_Array[impulscounter] > SERVOMAX)
-         {
-            Servo_Array[impulscounter] = SERVOMAX;
-         }
-         
-         if (Servo_Array[impulscounter]<  SERVOMIN)
-         {
-            Servo_Array[impulscounter] = SERVOMIN;
-         }
-         
-         
-         OCR1A  = Servo_Array[impulscounter]; //
-      }
       
       
       
@@ -614,18 +573,29 @@ void setMitte(void)
    }
 }
 
+void writeRamByte(uint16_t adresse , uint8_t data)
+{
+   RAM_CS_LO;
+   _delay_us(LOOPDELAY);
+   spiram_wrbyte(adresse, data);
+   RAM_CS_HI;
+   _delay_us(LOOPDELAY);
+}
+
 // MARK: readSettings
 void readSettings(uint8_t modelindex)
 {
   
    uint8_t pos=0;
-    
+   
     // Level lesen
     uint16_t readstartadresse = TASK_OFFSET  + LEVEL_OFFSET + modelindex*SETTINGBREITE;
     // startadresse fuer Settings des models
     for (pos=0;pos<8;pos++)
     {
        Level_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+       //Expo_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+
     }
     
     // Expo lesen
@@ -633,7 +603,8 @@ void readSettings(uint8_t modelindex)
     for (pos=0;pos<8;pos++)
     {
        Expo_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
-       
+       //Level_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
+       //Expo_Array[pos]=0;
     }
    
    // Mix lesen
@@ -642,6 +613,7 @@ void readSettings(uint8_t modelindex)
     {
        Mix_Array[pos] = spieeprom_rdbyte(readstartadresse+pos); // data 0: kanaele data 1: mixart
     }
+   
 /*
    lcd_gotoxy(0,0);
    lcd_putc('E');
@@ -701,7 +673,7 @@ int main (void)
       
    volatile    uint8_t outcounter=0;
    volatile    uint8_t testdata =0x00;
-   volatile    uint8_t testaddress =0x00;
+   volatile    uint8_t testaddress =0xF0;
    volatile    uint8_t errcount =0x00;
    volatile    uint8_t ram_indata=0;
    
@@ -939,18 +911,18 @@ int main (void)
                uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
                
                // Richting aus Settings
-               uint8_t richtung = Expo_Array[i] & 0x80 >>7; // bit 7
+               uint8_t richtung = Expo_Array[i] ; // bit 7
                
                // Expo-Stufe aus Settings
-               uint8_t stufea = Expo_Array[i] & 0x03;
-               uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
+               uint8_t stufea = 0;// Expo_Array[i] & 0x03;
+               uint8_t stufeb = 0;//(Expo_Array[i] & 0x30) >>4;
                
                // Mitte aus Settings
                mitte = Mitte_Array[i];
               
                diff= mitte;
                adcdata = POT_Array[i]; // gemessener Potwert
-               
+
                stufe = 0;
                
                //OSZI_A_LO ;
@@ -960,10 +932,10 @@ int main (void)
                {
                   
                   diff = adcdata - mitte;
-                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);
+                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
-                  testdata1 = adcdata;
-                  testdata2=0;
+               
+               
                }
                else // Seite B
                {
@@ -972,82 +944,59 @@ int main (void)
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
                   
-                  testdata2 =adcdata;
-                  testdata1=0;
                }
-               
-               
+               if (i==0)
+               {
+                  testdataarray[0] = adcdata & 0x00FF;
+                  testdataarray[1] = (adcdata & 0xFF00)>>8;
+                  testdataarray[2] = Level_Array[i];
+                  testdataarray[3] = Expo_Array[i];
+               //testdataarray[2] = diffdatalo;
+               //testdataarray[3] = diffdatahi;
+              // testdataarray[4] = diff & 0x00FF;
+              // testdataarray[5] = (diff & 0xFF00)>>8;
+
+                 // testdataarray[6] = 0;//diffdatalo;
+                 // testdataarray[7] = 0;//diffdatahi;
+
+               }
                               // MARK: Integerberechnungen
                //OSZI_A_HI ;
                // start signed int
                
-               if (INT)
-               {
                   // 16bit-wert
                   diffdataInt = diffdatalo | (diffdatahi <<8);
-                  
-                  // level anpassen an Settings. Erst mult, dann div
-                  if (adcdata > mitte) // positiver Wert
+               
+                  if (adcdata > mitte) // positiver Ausschlag, Teil A
                   {
-                     diffdataInt *= (8-levela); // levela fuer linear ist 0, also mult mit 1
+                     levela=0;
+                     // level anpassen an Settings. Erst mult, dann div
+                     diffdataInt *= (8-levela); // levela fuer linear ist 0, also insgesamt mult mit 1
                      diffdataInt /= 8;
                   }
-                  else // negativer Wert
+                  else // negativer Ausschlag, Teil B
                   {
+                     levelb=0;
                      diffdataInt *= (8-levelb);
                      diffdataInt /= 8;
                      
                      diffdataInt *= (-1);
+                     //diffdataInt = -diffdataInt;
                   }
-                  
-                  if (richtung) // Richtung umkehren
+               
+               //richtung=1;
+               
+               
+                  if (richtung ) // Richtung umkehren
                   {
                      diffdataInt *= (-1);
+                     //diffdataInt = -diffdataInt;
                   }
-                  
-                  // Wert speichern, nachher in Mix weiter anpassen
+               
+                   // Wert speichern, nachher in Mix weiter anpassen
                   Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
                   
                   // end signed int
-               }
-               /*
-               else
-               {
-                  
-                  diffdata = diffdatalo | (diffdatahi <<8);
-                  
-                   
-                  if ((adcdata > mitte) )
-                  {
-                     diffdata *= (8-levela);
-                     diffdata /= 8;
-                     
-                     if (richtung)
-                     {
-                        Servo_Array[i] = mitte - diffdata;
-                     }
-                     else
-                     {
-                        Servo_Array[i] = mitte + diffdata;
-                     }
-                      
-                  }
-                  else
-                  {
-                     diffdata *= (8-levelb);
-                     diffdata /= 8;
-                     
-                     if (richtung)
-                     {
-                        Servo_Array[i] = mitte + diffdata;
-                     }
-                     else
-                     {
-                        Servo_Array[i] = mitte - diffdata;
-                     }
-                  }
-               }
-                */
                
              }
             
@@ -1087,7 +1036,9 @@ int main (void)
             }
          }
          
-         
+         //testdataarray[4] = Mitte_Array[0] & 0x00FF;
+         //testdataarray[5] = (Mitte_Array[0] & 0xFF00)>>8;
+
          // Mitte addieren
          for (i=0;i<8;i++)
          {
@@ -1095,6 +1046,13 @@ int main (void)
          }
          sei();
          
+         
+         {
+            testdataarray[6] = Servo_ArrayInt[0] & 0x00FF;
+            testdataarray[7] = (Servo_ArrayInt[0] & 0xFF00)>>8;
+            
+         }
+
          
          if ((eepromstatus & (1<<EE_WRITE))) // eventuell write an eeprom
          {
@@ -1221,8 +1179,6 @@ int main (void)
                //OSZI_A_LO ;
                for (i=0;i< 8;i++)
                {
-                  if (INT)
-                  {
                      RAM_CS_LO;
                      _delay_us(LOOPDELAY);
                      spiram_wrbyte(2*i, Servo_ArrayInt[i] & 0x00FF);
@@ -1237,130 +1193,15 @@ int main (void)
                      spiram_wrbyte(2*i+1, (Servo_ArrayInt[i] & 0xFF00)>>8);
                      _delay_us(LOOPDELAY);
                      RAM_CS_HI;
-                     
-                     
-                  }
                   
-                  else
-                  {
-                     /*
-                     RAM_CS_LO;
-                     _delay_us(LOOPDELAY);
-                     spiram_wrbyte(2*i, Servo_Array[i] & 0x00FF);
-                     RAM_CS_HI;
-                     _delay_us(LOOPDELAY);
-                     RAM_CS_LO;
-                     _delay_us(LOOPDELAY);
-                     spiram_wrbyte(2*i+1, (Servo_Array[i] & 0xFF00)>>8);
-                     RAM_CS_HI;
-                      */
-                  }
-                  
+                  writeRamByte(teststartadresse+i,testdataarray[i]);
+               
+               
+               
                }
                
-               /*
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(16, Servo_ArrayInt[0] & 0x00FF);
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(16+1, (Servo_ArrayInt[0] & 0xFF00)>>8);
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(18, Servo_ArrayInt[1] & 0x00FF);
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(18+1, (Servo_ArrayInt[1] & 0xFF00)>>8);
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               
-
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(20, (canalwerta+MITTE) & 0xFF);// canala
-
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(20+1, ((canalwerta+MITTE) & 0xFF00)>>8);
-               //spiram_wrbyte(20+1, (Mix_Array[0] & 0x70)>>4);// canalb
-               
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(22, ((canalwertb+MITTE) & 0xFF));
-               //spiram_wrbyte(22, Mix_Array[0]);// canals
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(22+1, ((canalwertb+MITTE) & 0xFF00)>>8);
-               //spiram_wrbyte(22+1, Mix_Array[1]);// mixart
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-
-               */
                
                
-               // ADC-Daten schicken
-               /*
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(0x3E, adcdata & 0xFF);
-               //     OSZI_A_HI;
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(0x3F, adcdata & 0xFF);
-               //     OSZI_A_HI;
-               RAM_CS_HI;
-               */
-               
-               // Diff-Daten schicken
-               /*
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               spiram_wrbyte(0x3C, diff & 0xFF);
-               //spiram_wrbyte(0x20, 17);
-               //     OSZI_A_HI;
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               RAM_CS_LO;
-               _delay_us(LOOPDELAY);
-               //      OSZI_A_LO;
-               spiram_wrbyte(0x3D,  (diff & 0xFF00)>>8);
-               //     OSZI_A_HI;
-               RAM_CS_HI;
-               
-               _delay_us(LOOPDELAY);
-               RAM_CS_LO;
-               //      OSZI_A_LO;
-               spiram_wrbyte(0x3E, diffdatalo);
-               //     OSZI_A_HI;
-               RAM_CS_HI;
-               _delay_us(LOOPDELAY);
-               RAM_CS_LO;
-               
-               //      OSZI_A_LO;
-               spiram_wrbyte(0x3F, diffdatahi);
-               OSZI_A_HI;
-               RAM_CS_HI;
-               */
                
                // Task lesen
                 task_in=0;

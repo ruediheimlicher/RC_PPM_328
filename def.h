@@ -45,8 +45,8 @@
 #define SETTINGBREITE            0x80; // Breite des Settingblocks fuer ein Device
 
 #define MITTE_OFFSET             0x10
-#define EXPO_OFFSET              0x20
-#define LEVEL_OFFSET             0x30
+#define EXPO_OFFSET              0x30
+#define LEVEL_OFFSET             0x20
 #define MIX_OFFSET               0x40
 
 #define READ_TASKADRESSE         0x1F0     // RAM_Adresse fuer  Task-Auftrag von RC_LCD
@@ -82,17 +82,23 @@
 #define MASTER_DDR            DDRB    //    DDRB
 #define MASTER_PIN            PINB
 
+//defines fuer masterstatus
+
 #define MASTER_EN_PIN         7 // Mit PinChange-Interrupt
 #define MASTER_EN_BIT         0 // Master erlaubt SPI
 #define SUB_START_BIT         1 // Slave kann starten
 #define SUB_END_BIT           2 // Slave ist fertig
-
-#define ALARM_PIN             7 // toggle Alarm
-#define ALARM_BIT             6 // toggle Alarm
-
 #define SUB_TASK_BIT          3  // Slave hat Aufgaben
-
 #define SUB_LCD_BIT           4 // Slave soll auf LCD schreiben
+#define ALARM_BIT             5 // toggle Alarm
+
+
+#define ALARM_PIN             7 // toggle Alarm Pin
+
+
+
+
+
 
 
 #define SUB_BUSY_PIN          6 // Sub ist busy
@@ -167,7 +173,7 @@
 
 #define POT_MITTE 7  //    Mittelwerte der Potentiometer speichern
 
-#define ANZ_POT   8
+#define ANZ_POT   6
 
 #define POT_FAKTOR 0.75
 
