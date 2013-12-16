@@ -54,7 +54,7 @@ static volatile uint8_t    adcstatus=0x00;
 static volatile uint8_t    usbstatus=0x00;
 
 static volatile uint8_t    eepromstatus=0x00;
-static volatile uint8_t    potstatus=0x80; // Bit 7 gesetzt, Mittelwerte setzen
+static volatile uint8_t    potstatus=0x00; // Bit nicht 7 gesetzt, Mittelwerte nicht automatisch setzen
 static volatile uint8_t    impulscounter=0x00;
 
 static volatile uint8_t    masterstatus = 0;
@@ -878,7 +878,7 @@ int main (void)
          
          if (potstatus & (1<< POT_MITTE))
          {
-            setMitte();
+//            setMitte();
             potstatus &= ~(1<< POT_MITTE);
          }
          
@@ -914,8 +914,8 @@ int main (void)
                uint8_t richtung = Expo_Array[i] ; // bit 7
                
                // Expo-Stufe aus Settings
-               uint8_t stufea = 0;// Expo_Array[i] & 0x03;
-               uint8_t stufeb = 0;//(Expo_Array[i] & 0x30) >>4;
+               uint8_t stufea = Expo_Array[i] & 0x03;
+               uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
                
                // Mitte aus Settings
                mitte = Mitte_Array[i];
@@ -949,17 +949,24 @@ int main (void)
                {
                   testdataarray[0] = adcdata & 0x00FF;
                   testdataarray[1] = (adcdata & 0xFF00)>>8;
-                  testdataarray[2] = Level_Array[i];
-                  testdataarray[3] = Expo_Array[i];
+           //       testdataarray[2] = Level_Array[i];
+            //      testdataarray[3] = Expo_Array[i];
+                  
+                  //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
+                  //testdataarray[5] = (uint8_t)spieeprom_rdbyte(2*diff+1);
+
+                  
+                  
                //testdataarray[2] = diffdatalo;
                //testdataarray[3] = diffdatahi;
               // testdataarray[4] = diff & 0x00FF;
               // testdataarray[5] = (diff & 0xFF00)>>8;
 
-                 // testdataarray[6] = 0;//diffdatalo;
-                 // testdataarray[7] = 0;//diffdatahi;
+                 testdataarray[4] = diffdatalo;
+                 testdataarray[5] = diffdatahi;
 
                }
+              
                               // MARK: Integerberechnungen
                //OSZI_A_HI ;
                // start signed int
@@ -969,14 +976,14 @@ int main (void)
                
                   if (adcdata > mitte) // positiver Ausschlag, Teil A
                   {
-                     levela=0;
+                     //levela=0;
                      // level anpassen an Settings. Erst mult, dann div
                      diffdataInt *= (8-levela); // levela fuer linear ist 0, also insgesamt mult mit 1
                      diffdataInt /= 8;
                   }
                   else // negativer Ausschlag, Teil B
                   {
-                     levelb=0;
+                     //levelb=0;
                      diffdataInt *= (8-levelb);
                      diffdataInt /= 8;
                      
@@ -985,7 +992,12 @@ int main (void)
                   }
                
                //richtung=1;
-               
+               if (i==0)
+               {
+
+                testdataarray[6] = abs(diffdataInt) & 0x00FF;
+                testdataarray[7] = (abs(diffdataInt) & 0xFF00)>>8;
+               }
                
                   if (richtung ) // Richtung umkehren
                   {
@@ -1001,12 +1013,15 @@ int main (void)
              }
             
          }// for i
+         //testdataarray[4] = abs(Servo_ArrayInt[0]) & 0x00FF;
+         //testdataarray[5] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
+         
          //OSZI_A_HI ;
          // Servodaten mit Mix verarbeiten
          // Mix_Array 0: canals
          // Mix_Array 1: mixart
          
-         
+        
          for (i=0;i<4;i++) // 50 us
          {
             // Mixing lesen
@@ -1038,6 +1053,8 @@ int main (void)
          
          //testdataarray[4] = Mitte_Array[0] & 0x00FF;
          //testdataarray[5] = (Mitte_Array[0] & 0xFF00)>>8;
+         //testdataarray[6] = abs(Servo_ArrayInt[0]) & 0x00FF;
+         //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
          for (i=0;i<8;i++)
@@ -1048,8 +1065,8 @@ int main (void)
          
          
          {
-            testdataarray[6] = Servo_ArrayInt[0] & 0x00FF;
-            testdataarray[7] = (Servo_ArrayInt[0] & 0xFF00)>>8;
+ //          testdataarray[6] = Servo_ArrayInt[0] & 0x00FF;
+ //        testdataarray[7] = (Servo_ArrayInt[0] & 0xFF00)>>8;
             
          }
 
