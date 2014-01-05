@@ -1019,6 +1019,7 @@ int main (void)
          //OSZI_A_HI ;
          // Servodaten mit Mix verarbeiten
          // Mix_Array 0: canals
+         
          // Mix_Array 1: mixart
          
         
