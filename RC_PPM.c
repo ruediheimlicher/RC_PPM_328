@@ -475,7 +475,7 @@ void timer0 (void) // nicht verwendet
 	//TIFR |= (1<<TOV0);							//Clear TOV0 Timer/Counter Overflow Flag. clear pending interrupts
 	TIMSK0 |= (1<<TOIE0);							//Overflow Interrupt aktivieren
 	TCNT0 = TIMER0_STARTWERT;					//Rücksetzen des Timers
-
+   
 }
 
 /*
@@ -521,15 +521,15 @@ ISR (TIMER2_OVF_vect)
          timer2BatterieCounter++; // Intervall fuer Messung der Batteriespannung
          if (timer2BatterieCounter >= 0xF)
          {
-            adcstatus |= (1<<ADC_START); // Batteriespannung messen
+            //adcstatus |= (1<<ADC_START); // Batteriespannung messen
             timer2BatterieCounter = 0;
          }
       }
 		timer2Counter = 0;
-      
+      OSZI_A_LO ;
 	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
-   //OSZI_A_LO ;
+   //OSZI_A_HI ;
 }
 
 /*
@@ -545,6 +545,7 @@ ISR(TIMER2_COMP_vect) // Schaltet Impuls an SERVOPIN0 aus
 //https://sites.google.com/site/qeewiki/books/avr-guide/external-interrupts-on-the-atmega328
 
 #pragma mark PCINT0-vect
+
 ISR (PCINT0_vect)
 {
    
@@ -793,7 +794,7 @@ int main (void)
       {
          masterstatus &= ~(1<<HALT);
       }
-      else
+      else // Slave ist HALT
       {
          //OSZI_A_TOGG ;
          
@@ -821,7 +822,7 @@ int main (void)
       {
          masterstatus &= ~(1<< POT_READ);
          
-         MASTER_PORT |= (1<<MASTER_EN_PIN); // Sub abstellen
+ //        MASTER_PORT |= (1<<MASTER_EN_PIN); // Sub abstellen
          _delay_us(2);
          
          
@@ -874,6 +875,7 @@ int main (void)
             }
             anzeigecounter++;
          }
+         OSZI_A_HI ;
          // Mittelwert speichern
          
          if (potstatus & (1<< POT_MITTE))
@@ -895,7 +897,7 @@ int main (void)
          
          SPI_EE_init();
          spieeprom_init();
-         cli();
+ //        cli();
          
          
          // MARK Servodaten aufbereiten
@@ -928,6 +930,7 @@ int main (void)
                //OSZI_A_LO ;
                // Wert fuer adcdata an Adresse in EEPROM lesen, 2 bytes
                // diff: adcwert - mitte. Auf der einen Seite addieren, auf der anderen subtrahieren
+               cli();
                if (adcdata > mitte) // Seite A
                {
                   
@@ -945,6 +948,7 @@ int main (void)
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
                   
                }
+               sei();
                if (i==0)
                {
                   testdataarray[0] = adcdata & 0x00FF;
@@ -1378,7 +1382,7 @@ int main (void)
                
                
                //spi_end();
-               // MARK: timer1 Start
+   // MARK: timer1 Start
                // Berechnungen fertig, Timer1 fuer Summensignal starten
                sei();
                // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen Vorgängen
