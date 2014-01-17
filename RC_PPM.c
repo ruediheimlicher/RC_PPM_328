@@ -825,6 +825,7 @@ int main (void)
  //        MASTER_PORT |= (1<<MASTER_EN_PIN); // Sub abstellen
          _delay_us(2);
          
+         //OSZI_B_LO;
          
          potstatus &= ~(1<< SPI_START);   // Bit zuruecksetzen
          
@@ -875,6 +876,7 @@ int main (void)
             }
             anzeigecounter++;
          }
+         
          OSZI_A_HI ;
          // Mittelwert speichern
          
@@ -976,7 +978,8 @@ int main (void)
                // start signed int
                
                   // 16bit-wert
-                  diffdataInt = diffdatalo | (diffdatahi <<8);
+               
+               diffdataInt = diffdatalo | (diffdatahi <<8);
                
                   if (adcdata > mitte) // positiver Ausschlag, Teil A
                   {
@@ -1074,7 +1077,7 @@ int main (void)
  //        testdataarray[7] = (Servo_ArrayInt[0] & 0xFF00)>>8;
             
          }
-
+         //OSZI_B_HI;
          
          if ((eepromstatus & (1<<EE_WRITE))) // eventuell write an eeprom
          {
@@ -1217,14 +1220,7 @@ int main (void)
                      RAM_CS_HI;
                   
                   writeRamByte(teststartadresse+i,testdataarray[i]);
-               
-               
-               
                }
-               
-               
-               
-               
                // Task lesen
                 task_in=0;
                _delay_us(2);
@@ -1236,8 +1232,6 @@ int main (void)
                _delay_us(LOOPDELAY);
                //     OSZI_B_HI;
                RAM_CS_HI;
- 
-               
               
                if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
@@ -1254,7 +1248,6 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_HI;
                   RAM_CS_HI;
-                
                   
                   lcd_gotoxy(12,0);
                   lcd_puthex(task_in);
@@ -1262,8 +1255,7 @@ int main (void)
                   lcd_puthex(task_counter);
                   lcd_putc('+');
                   lcd_clr_line(1);
-                  
-                  
+ 
                   readSettings(task_indata);
                   
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);
@@ -1274,7 +1266,6 @@ int main (void)
                   spiram_wrbyte(READ_TASKADRESSE, 0);
                   //OSZI_A_HI;
                   RAM_CS_HI;
-               
                }
                
                // eventuelle Taskdaten schreiben
@@ -1309,7 +1300,6 @@ int main (void)
                   masterstatus |= (1<<ALARM_BIT);
                }
                
-               
                // statusregister schreiben
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
@@ -1327,21 +1317,11 @@ int main (void)
                //     OSZI_A_HI;
                RAM_CS_HI;
                
-               
                _delay_us(LOOPDELAY);
-               
-               /*
-                RAM_CS_LO;
-                for (uint8_t k=0;k<32;k++)
-                {
-                spiram_wrbyte(testaddress, testdata);
-                }
-                RAM_CS_HI;
-                */
+
                // Daten aendern
                if (outcounter%0x40 == 0) // ab und zu Fehler melden
                {
-                  
                   // timer2Counter=0;
                   /*
                   lcd_gotoxy(6,0);
@@ -1369,8 +1349,6 @@ int main (void)
                   
                   testdata++;
                   testaddress = 0xF0;
-                  //testaddress--;
-                  
                   
                }
                outcounter++;
@@ -1385,6 +1363,7 @@ int main (void)
    // MARK: timer1 Start
                // Berechnungen fertig, Timer1 fuer Summensignal starten
                sei();
+               
                // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen VorgŠngen
                {
                   

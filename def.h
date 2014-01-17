@@ -85,6 +85,7 @@
 //defines fuer masterstatus
 
 #define MASTER_EN_PIN         7 // Mit PinChange-Interrupt
+
 #define MASTER_EN_BIT         0 // Master erlaubt SPI
 #define SUB_START_BIT         1 // Slave kann starten
 #define SUB_END_BIT           2 // Slave ist fertig
