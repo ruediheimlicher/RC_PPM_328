@@ -26,6 +26,8 @@
 #define SPI_MISO_PIN               4
 #define SPI_SCK_PIN                5
 
+#define ADC_DELAY                   8
+
 // SPI clock modes aus spi.h
 #define SPI_MODE_0 0x00 /* Sample (Rising) Setup (Falling) CPOL=0, CPHA=0 */
 #define SPI_MODE_1 0x01 /* Setup (Rising) Sample (Falling) CPOL=0, CPHA=1 */

@@ -91,7 +91,7 @@
 #define SUB_END_BIT           2 // Slave ist fertig
 #define SUB_TASK_BIT          3  // Slave hat Aufgaben
 #define SUB_LCD_BIT           4 // Slave soll auf LCD schreiben
-#define ALARM_BIT             5 // toggle Alarm
+
 
 
 #define ALARM_PIN             7 // toggle Alarm Pin
@@ -103,7 +103,6 @@
 
 
 #define SUB_BUSY_PIN          6 // Sub ist busy
-#define SUB_BUSY_BIT          6 // Sub ist busy
 
 #define SUB_EN_PIN            7 // Sub ist enabled
 
@@ -141,14 +140,21 @@
 // Bit
 
 // Masterstatus
-#define  RAM_READ           0x01  //Bit 0 
-#define  RAM_WRITE          0x02  //Bit 1  
-#define  EEPROM_READ        0x04  //Bit 2
-#define  EEPROM_WRITE       0x08  //Bit 3
+//#define  RAM_READ           0x01  //Bit 0
+//#define  RAM_WRITE          0x02  //Bit 1
+//#define  EEPROM_READ        0x04  //Bit 2
+//#define  EEPROM_WRITE       0x08  //Bit 3
 
-#define  HALT                7  //Bit 7 
+#define KANAL_EN_BIT          2 // Kanalimpuls setzen, nach Lesen von EEPROM beim Start
+#define SUB_BUSY_BIT          3 // Sub ist busy
+#define POT_READ              4  //Bit 4
 
-#define  POT_READ           4  //Bit 4
+
+#define RAM_ALARM_BIT         5 // toggle Alarm
+#define ADC_ALARM_BIT         6 // toggle Alarm
+
+#define  HALT                 7  //Bit 7
+
 
 // EEPROM
 

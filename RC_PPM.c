@@ -259,6 +259,7 @@ void spi_start(void) // SPI-Pins aktivieren
    
    SPI_DDR |= (1<<SPI_MOSI_PIN);
    
+
    SPI_DDR |= (1<<SPI_SCK_PIN);
    SPI_PORT &= ~(1<<SPI_SCK_PIN); // LO
    
@@ -526,7 +527,7 @@ ISR (TIMER2_OVF_vect)
          }
       }
 		timer2Counter = 0;
-      OSZI_A_LO ;
+      //OSZI_A_LO ;
 	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
    //OSZI_A_HI ;
@@ -615,8 +616,9 @@ void readSettings(uint8_t modelindex)
        Mix_Array[pos] = spieeprom_rdbyte(readstartadresse+pos); // data 0: kanaele data 1: mixart
     }
    
-/*
-   lcd_gotoxy(0,0);
+
+   lcd_gotoxy(0,1);
+   /*
    lcd_putc('E');
    lcd_putc(' ');
    lcd_puthex(Expo_Array[0]);
@@ -629,22 +631,25 @@ void readSettings(uint8_t modelindex)
    lcd_puthex(Level_Array[1]);
    lcd_putc(' ');
  */
-
-   lcd_gotoxy(0,1);
-   lcd_putc('A');
+   lcd_putc('L');
    //lcd_putc(' ');
-   lcd_putint12(readstartadresse);
+   lcd_puthex(Level_Array[0]);
+   lcd_puthex(Level_Array[1]);
+   //lcd_putc(' ');
+   lcd_puthex(Level_Array[2]);
+   lcd_puthex(Level_Array[3]);
+
    lcd_putc(' ');
    lcd_putc('M');
    //lcd_putc(' ');
    lcd_puthex(Mix_Array[0]);
    lcd_puthex(Mix_Array[1]);
-   lcd_putc(' ');
+   //lcd_putc(' ');
    lcd_puthex(Mix_Array[2]);
    lcd_puthex(Mix_Array[3]);
 
 
-   lcd_putc('+');
+   
 
 }
 
@@ -675,7 +680,9 @@ int main (void)
    volatile    uint8_t outcounter=0;
    volatile    uint8_t testdata =0x00;
    volatile    uint8_t testaddress =0xF0;
-   volatile    uint8_t errcount =0x00;
+   volatile    uint8_t ram_errcount =0x00;
+   volatile    uint8_t adc_errcount =0x00;
+   volatile    uint8_t eeprom_errcount =0x00;
    volatile    uint8_t ram_indata=0;
    
 
@@ -749,7 +756,7 @@ int main (void)
 			loopcount1+=1;
 			LOOPLED_PORT ^=(1<<LOOPLED_PIN);
          
-         if  (masterstatus & (1<<ALARM_BIT))
+         if  (masterstatus & (1<<RAM_ALARM_BIT))
          {
             CMD_PORT ^= (1<<ALARM_PIN);
          }
@@ -846,27 +853,47 @@ int main (void)
                {
                   
                   //POT_Array[i] = 0x600;
-                  //OSZI_A_LO ;
+                  OSZI_A_LO ;
                   cli();
                   //POT_Array[i] = POT_FAKTOR * MCP3208_spiRead(SingleEnd,i); // globaler Korr.Faktor fuer Servowert
-                  POT_Array[i] = MCP3208_spiRead(SingleEnd,i)*3/4; // globaler Korr.Faktor fuer Servowert
+                  uint16_t tempdata =MCP3208_spiRead(SingleEnd,i);
+                  if (tempdata)
+                  {
+                     POT_Array[i] = tempdata*3/4;
+                  }
+                  else
+                  {
+                     _delay_us(5);
+                     OSZI_A_LO ;
+                     adc_errcount++;
+                     masterstatus |= (1<<ADC_ALARM_BIT);
+                     
+                     OSZI_A_HI ;
+
+                  }
+                  
+                  //POT_Array[i] = MCP3208_spiRead(SingleEnd,i)*3/4; // globaler Korr.Faktor fuer Servowert
+                  //_delay_us(5);
                   sei();
-                  //OSZI_A_HI ;
+                  OSZI_A_HI ;
+                  /*
                   if (POT_Array[i]==0)
                   {
-                     //OSZI_A_LO ;
-                     errcount++;
-                     masterstatus |= (1<<ALARM_BIT);
+                     _delay_us(5);
+                     OSZI_A_LO ;
+                     adc_errcount++;
+                     masterstatus |= (1<<ADC_ALARM_BIT);
                      
                      POT_Array[i] = 0x600;
                      
-                     //OSZI_A_HI ;
+                     OSZI_A_HI ;
                   }
+                   */
                   //POT_Array[i] = 0x600;
                   // Filter
                   //POT_Array[i] = 3*POT_Array[i]/4 + (MCP3208_spiRead(SingleEnd,i)/4);
                   //POT_Array[i] = POT_FAKTOR*(1*POT_Array[i]/2 + (MCP3208_spiRead(SingleEnd,i)/2));
-                  _delay_us(2); // war mal 100
+                  _delay_us(50); // war mal 100
                   
                }
                else
@@ -877,7 +904,7 @@ int main (void)
             anzeigecounter++;
          }
          
-         OSZI_A_HI ;
+         //OSZI_A_HI ;
          // Mittelwert speichern
          
          if (potstatus & (1<< POT_MITTE))
@@ -1163,7 +1190,7 @@ int main (void)
              lcd_putc('*');
              
              lcd_putc('*');
-             lcd_puthex(errcount);
+             lcd_puthex(ram_errcount);
              
              sendbuffer[3] = eeprom_testaddress;
              sendbuffer[4] = eeprom_testdata;
@@ -1249,13 +1276,15 @@ int main (void)
                   //     OSZI_B_HI;
                   RAM_CS_HI;
                   
+                  
                   lcd_gotoxy(12,0);
+                  lcd_putc('T');
                   lcd_puthex(task_in);
                   lcd_putc('+');
                   lcd_puthex(task_counter);
                   lcd_putc('+');
                   lcd_clr_line(1);
- 
+                  
                   readSettings(task_indata);
                   
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);
@@ -1291,13 +1320,13 @@ int main (void)
                // Fehler zaehlen
                if ((testdata == ram_indata))
                {
-                  masterstatus &= ~(1<<ALARM_BIT);
+                  masterstatus &= ~(1<<RAM_ALARM_BIT);
                }
                else
                {
-                  errcount++;
+                  ram_errcount++;
                   TCNT2 = 0;
-                  masterstatus |= (1<<ALARM_BIT);
+                  masterstatus |= (1<<RAM_ALARM_BIT);
                }
                
                // statusregister schreiben
@@ -1313,7 +1342,7 @@ int main (void)
                
                _delay_us(LOOPDELAY);
                //      OSZI_A_LO;
-               spiram_wrbyte(7, errcount);
+               spiram_wrbyte(7, ram_errcount);
                //     OSZI_A_HI;
                RAM_CS_HI;
                
@@ -1337,15 +1366,25 @@ int main (void)
                   //lcd_putint(ram_indata);
                   //lcd_putc('+');
                    */
-                  if  (masterstatus & (1<<ALARM_BIT))
+                  if  (masterstatus & (1<<RAM_ALARM_BIT))
                   {
-                     masterstatus &= ~(1<<ALARM_BIT);
+                     masterstatus &= ~(1<<RAM_ALARM_BIT);
                      lcd_gotoxy(0,0);
-                     lcd_putc('+');
-                     lcd_putint(errcount);
+                     lcd_putc('R');
+                     lcd_putint(ram_errcount);
                      lcd_putc('+');
                      
                   }
+                  if  (masterstatus & (1<<ADC_ALARM_BIT))
+                  {
+                     masterstatus &= ~(1<<ADC_ALARM_BIT);
+                     lcd_gotoxy(8,0);
+                     lcd_putc('A');
+                     lcd_putint(adc_errcount);
+                     lcd_putc('+');
+                     
+                  }
+                  
                   
                   testdata++;
                   testaddress = 0xF0;

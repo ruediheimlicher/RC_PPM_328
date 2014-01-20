@@ -3,6 +3,7 @@
 
 #include <avr/io.h>
 #include "spi_adc.h"
+#include <avr/delay.h>
 
 
 void MCP3208_spiDelay(unsigned int NOPcount)
@@ -17,7 +18,7 @@ void MCP3208_spiDelay(unsigned int NOPcount)
 void spiadc_init()
 {
    SPCR=0;
-   SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR1)|(0<<SPR0)|(1<<CPOL)|(1<<CPHA);
+   SPCR = (1<<SPE)|(1<<MSTR)|(1<<CPOL)|(1<<CPHA)|(1<<SPR0);//|(0<<SPR0);
    
 }
 
@@ -56,7 +57,7 @@ unsigned int MCP3208_spiRead(unsigned char AD_type,unsigned char ADchanel)
    unsigned char  tempHigh,tempLow,tempADtype,dummyData;
    
    SPI_PORT &= ~(1<<(SPI_SS_PIN));     //setbitLow CS  Pin
-   MCP3208_spiDelay(delayCount );
+   _delay_us(ADC_DELAY);
    
    tempADtype = (AD_type & 0x01) << 1 ;
    tempLow = (ADchanel & 0x03) << 6;
@@ -64,10 +65,12 @@ unsigned int MCP3208_spiRead(unsigned char AD_type,unsigned char ADchanel)
    tempHigh |= (0x04)|(tempADtype);     // 0x04 --> startBit
    
    dummyData = MCP3208_spiWrite(tempHigh);        // Write control HighByte return not care
+    _delay_us(ADC_DELAY);
    gReciveHighByte = MCP3208_spiWrite(tempLow);  // Write control LowByte return A/D-MSB data
+    _delay_us(ADC_DELAY);
    gReciveLowByte = MCP3208_spiWrite(0x00);      // Write Null byte 0x00 return A/D-LSB data
    
-   MCP3208_spiDelay(delayCount );
+ _delay_us(ADC_DELAY);
    SPI_PORT |= (1<<(SPI_SS_PIN));        //setbitHigh CS  Pin
    
    return (((gReciveHighByte & 0x0F)<<8)|gReciveLowByte);  // return 16bit variable (12bit A/D data)
