@@ -1237,17 +1237,16 @@ int main (void)
                      
                      RAM_CS_HI;
                      _delay_us(LOOPDELAY);
-                     
-                     
-                     
+                  
                      RAM_CS_LO;
                      _delay_us(LOOPDELAY);
                      spiram_wrbyte(2*i+1, (Servo_ArrayInt[i] & 0xFF00)>>8);
                      _delay_us(LOOPDELAY);
                      RAM_CS_HI;
                   
-                  writeRamByte(teststartadresse+i,testdataarray[i]);
+               //   writeRamByte(teststartadresse+i,testdataarray[i]);
                }
+               
                // Task lesen
                 task_in=0;
                _delay_us(2);
@@ -1378,7 +1377,7 @@ int main (void)
                   if  (masterstatus & (1<<ADC_ALARM_BIT))
                   {
                      masterstatus &= ~(1<<ADC_ALARM_BIT);
-                     lcd_gotoxy(8,0);
+                     lcd_gotoxy(6,0);
                      lcd_putc('A');
                      lcd_putint(adc_errcount);
                      lcd_putc('+');
