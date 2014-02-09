@@ -1285,7 +1285,7 @@ int main (void)
                   lcd_clr_line(1);
                   
                   readSettings(task_indata);
-                  
+                  task_outdata = 0xAA;
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);
                   
                   // Taskdaten entfernen
