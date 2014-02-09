@@ -638,7 +638,7 @@ void readSettings(uint8_t modelindex)
    //lcd_putc(' ');
    lcd_puthex(Level_Array[2]);
    lcd_puthex(Level_Array[3]);
-
+/*
    lcd_putc(' ');
    lcd_putc('M');
    //lcd_putc(' ');
@@ -647,7 +647,7 @@ void readSettings(uint8_t modelindex)
    //lcd_putc(' ');
    lcd_puthex(Mix_Array[2]);
    lcd_puthex(Mix_Array[3]);
-
+*/
 
    
 
@@ -1258,7 +1258,62 @@ int main (void)
                _delay_us(LOOPDELAY);
                //     OSZI_B_HI;
                RAM_CS_HI;
-              
+ 
+               
+               if (task_in & (1<<RAM_SEND_DOGM_TASK))
+                   
+                   {
+                      //lcd_gotoxy(19,1);
+                     // lcd_putc('A'+(task_counter&0x03));
+
+                      task_in &= ~(1<<RAM_SEND_DOGM_TASK);
+                      /*
+                      RAM_CS_LO;
+                      _delay_us(LOOPDELAY);
+                      //     OSZI_B_LO;
+                      _delay_us(LOOPDELAY);
+                      task_indata = spiram_rdbyte(READ_TASKDATA);
+                      _delay_us(LOOPDELAY);
+                      //     OSZI_B_HI;
+                      RAM_CS_HI;
+                       */
+                      task_counter++;
+                       
+                      lcd_gotoxy(10,1);
+                      lcd_putc('D');
+                      lcd_puthex(task_in);
+                      lcd_putc('d');
+                      lcd_puthex(task_indata);
+                      lcd_putc('c');
+                      lcd_puthex(task_counter);
+                      //lcd_putc('+');
+                      _delay_us(LOOPDELAY);
+                      
+                      // task_in im RAM zuruecksetzen
+                      RAM_CS_LO;
+                      spiram_wrbyte(READ_TASKADRESSE, 0);
+                      //OSZI_A_HI;
+                      RAM_CS_HI;
+                      
+                      readSettings(task_indata);
+                      
+                      // Quittung an LCD
+                      task_outdata = 0xBB;
+                      
+                      
+                     
+                   }
+               
+               /*
+                // Kontrolle
+               if (task_in & (1<<RAM_RECV_LCD_TASK))
+               {
+                  lcd_gotoxy(19,0);
+                  lcd_putc('A'+(task_counter&0x03));
+               }
+               */
+               
+               
                if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
                   eepromstatus &= ~(1<<EE_READ_SETTINGS);
@@ -1276,16 +1331,21 @@ int main (void)
                   RAM_CS_HI;
                   
                   
-                  lcd_gotoxy(12,0);
+                  lcd_gotoxy(10,0);
                   lcd_putc('T');
                   lcd_puthex(task_in);
-                  lcd_putc('+');
+                  lcd_putc('d');
+                  lcd_puthex(task_indata);
+                  lcd_putc('c');
                   lcd_puthex(task_counter);
-                  lcd_putc('+');
+                  
                   lcd_clr_line(1);
                   
                   readSettings(task_indata);
+                  
+                  // Quittung an LCD
                   task_outdata = 0xAA;
+                  
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);
                   
                   // Taskdaten entfernen
@@ -1294,6 +1354,7 @@ int main (void)
                   spiram_wrbyte(READ_TASKADRESSE, 0);
                   //OSZI_A_HI;
                   RAM_CS_HI;
+                  
                }
                
                // eventuelle Taskdaten schreiben
@@ -1303,7 +1364,6 @@ int main (void)
                spiram_wrbyte(WRITE_TASKADRESSE, task_outdata);
                //OSZI_A_HI;
                RAM_CS_HI;
-               
                
                // Kontrolle
                _delay_us(2);
@@ -1371,16 +1431,16 @@ int main (void)
                      lcd_gotoxy(0,0);
                      lcd_putc('R');
                      lcd_putint(ram_errcount);
-                     lcd_putc('+');
+                     //lcd_putc('+');
                      
                   }
                   if  (masterstatus & (1<<ADC_ALARM_BIT))
                   {
                      masterstatus &= ~(1<<ADC_ALARM_BIT);
-                     lcd_gotoxy(6,0);
+                     lcd_gotoxy(4,0);
                      lcd_putc('A');
                      lcd_putint(adc_errcount);
-                     lcd_putc('+');
+                     //lcd_putc('+');
                      
                   }
                   
