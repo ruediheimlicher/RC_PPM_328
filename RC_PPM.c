@@ -1267,7 +1267,7 @@ int main (void)
                      // lcd_putc('A'+(task_counter&0x03));
 
                       task_in &= ~(1<<RAM_SEND_DOGM_TASK);
-                      /*
+                      
                       RAM_CS_LO;
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_LO;
@@ -1276,7 +1276,7 @@ int main (void)
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_HI;
                       RAM_CS_HI;
-                       */
+                       
                       task_counter++;
                        
                       lcd_gotoxy(10,1);
