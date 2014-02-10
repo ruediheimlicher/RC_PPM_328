@@ -51,20 +51,14 @@ volatile uint8_t timer0startwert=TIMER0_STARTWERT;
 void delay_ms(unsigned int ms);
 
 static volatile uint8_t    adcstatus=0x00;
-static volatile uint8_t    usbstatus=0x00;
+
+static volatile uint8_t    loopstatus=0x00;
 
 static volatile uint8_t    eepromstatus=0x00;
 static volatile uint8_t    potstatus=0x00; // Bit nicht 7 gesetzt, Mittelwerte nicht automatisch setzen
 static volatile uint8_t    impulscounter=0x00;
 
 static volatile uint8_t    masterstatus = 0;
-/*
- RAM_READ   Bit 0 0x01
- RAM_WRITE  Bit 1 0x02
- EEPROM_READ    Bit 2 0x04
- EEPROM_WRITE   Bit 3 0x08
- 
- */
 
 #define USB_RECV  0 
 
@@ -1261,7 +1255,6 @@ int main (void)
  
                
                if (task_in & (1<<RAM_SEND_DOGM_TASK))
-                   
                    {
                       //lcd_gotoxy(19,1);
                      // lcd_putc('A'+(task_counter&0x03));
@@ -1276,7 +1269,7 @@ int main (void)
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_HI;
                       RAM_CS_HI;
-                       
+                      
                       task_counter++;
                        
                       lcd_gotoxy(10,1);
@@ -1316,8 +1309,12 @@ int main (void)
                
                if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
-                  eepromstatus &= ~(1<<EE_READ_SETTINGS);
                   
+                 if (task_in & (1<<RAM_RECV_LCD_TASK))
+                  {
+                    // loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
+                  }
+                  eepromstatus &= ~(1<<EE_READ_SETTINGS);
                   task_counter++;
                   // Taskdaten lesen
                   _delay_us(2);
@@ -1354,6 +1351,8 @@ int main (void)
                   spiram_wrbyte(READ_TASKADRESSE, 0);
                   //OSZI_A_HI;
                   RAM_CS_HI;
+                  
+                  loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
                   
                }
                
@@ -1462,7 +1461,9 @@ int main (void)
                // Berechnungen fertig, Timer1 fuer Summensignal starten
                sei();
                
-               // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei Langen VorgŠngen
+               // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei langen VorgŠngen
+               
+               if (loopstatus & (1<<KANAL_BIT))
                {
                   
                   timer1_init(); // Kanaele starten
@@ -1558,19 +1559,6 @@ int main (void)
 		//lcd_gotoxy(3,1);
 		//lcd_putint(Tastenwert);
    
-		//OSZI_B_HI;
-      if (usbstatus & (1<< USB_RECV))
-      {
-         //lcd_gotoxy(10,1);
-         //lcd_puthex(AbschnittCounter);
-         //sendbuffer[3]= AbschnittCounter;
-         //usb_rawhid_send((void*)sendbuffer, 50);
-         //sendbuffer[0]=0;
-         //sendbuffer[5]=0;
-         //sendbuffer[6]=0;
-         //usbstatus &= ~(1<< USB_RECV);
-         
-      }
 
 	}//while
    //free (sendbuffer);

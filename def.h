@@ -142,10 +142,6 @@
 // Bit
 
 // Masterstatus
-//#define  RAM_READ           0x01  //Bit 0
-//#define  RAM_WRITE          0x02  //Bit 1
-//#define  EEPROM_READ        0x04  //Bit 2
-//#define  EEPROM_WRITE       0x08  //Bit 3
 
 #define KANAL_EN_BIT          2 // Kanalimpuls setzen, nach Lesen von EEPROM beim Start
 #define SUB_BUSY_BIT          3 // Sub ist busy
@@ -157,6 +153,9 @@
 
 #define  HALT                 7  //Bit 7
 
+
+// loopstatus
+#define KANAL_BIT             0     //Summensignal soll ausgegeben werden
 
 // EEPROM
 
