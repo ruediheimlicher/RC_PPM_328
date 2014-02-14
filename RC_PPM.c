@@ -1292,11 +1292,7 @@ int main (void)
                       
                       // Quittung an LCD
                       task_outdata = 0xBB;
-                      
-                      
-                     
                    }
-               
                /*
                 // Kontrolle
                if (task_in & (1<<RAM_RECV_LCD_TASK))
@@ -1305,7 +1301,6 @@ int main (void)
                   lcd_putc('A'+(task_counter&0x03));
                }
                */
-               
                
                if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
@@ -1326,7 +1321,6 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_HI;
                   RAM_CS_HI;
-                  
                   
                   lcd_gotoxy(10,0);
                   lcd_putc('T');
