@@ -1,9 +1,19 @@
 //Oszi
+/*
 #define OSZIPORT           PORTD
 #define OSZIPORTDDR        DDRD
 #define OSZIPORTPIN        PIND
 #define OSZI_PULS_A        0
 #define OSZI_PULS_B        1
+ */
+
+// new PCB
+#define OSZIPORT           PORTB
+#define OSZIPORTDDR        DDRB
+#define OSZIPORTPIN        PINB
+#define OSZI_PULS_A        0
+#define OSZI_PULS_B        1
+
 
 
 #define OSZI_A_LO OSZIPORT &= ~(1<<OSZI_PULS_A)
@@ -86,7 +96,8 @@
 
 //defines fuer masterstatus
 
-#define MASTER_EN_PIN         7 // Mit PinChange-Interrupt
+#define MASTER_EN_PIN         7 // 
+
 
 #define MASTER_EN_BIT         0 // Master erlaubt SPI
 #define SUB_START_BIT         1 // Slave kann starten
@@ -106,7 +117,7 @@
 
 #define SUB_BUSY_PIN          6 // Sub ist busy
 
-#define SUB_EN_PIN            7 // Sub ist enabled
+//#define SUB_EN_PIN            7 // Sub ist enabled
 
          
 #define MASTER_EN_HI           MASTER_PORT & (1<<MASTER_EN_PIN)
@@ -124,11 +135,12 @@
 
 
 // ADC
-
+/*
 #define ADC_PORT            PORTC   //
 #define ADC_DDR             DDRC    //    
 #define ADC_PIN             PINC    //    
 #define ADC_0               0 // Kanal fuer Batteriespannung
+*/
 
 #define KANAL_PORT            PORTC   //    Ausgang Summensignal 
 #define KANAL_DDR             DDRC    //    
@@ -165,7 +177,7 @@
 
 #define EE_READ_SETTINGS   4
 
-#define MITTE 0x600
+#define MITTE 0x564 // Neutralstellung 1.5ms
 
 
 // Bit
