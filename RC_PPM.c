@@ -171,7 +171,7 @@ void Master_Init(void)
    DDRD |= (1<<PORTD6);
    PORTD |= (1<<PORTD6);
    
-   ADC_DDR &= ~(1<<ADC_0);
+  // ADC_DDR &= ~(1<<ADC_0);
    
    
    
@@ -319,13 +319,13 @@ void timer1_init(void)
    
    // Quelle http://www.mikrocontroller.net/topic/103629
    
-   //OSZI_A_HI ; // Test: data fuer SR
    //_delay_us(5);
    //#define FRAME_TIME 20 // msec
    KANAL_DDR |= (1<<KANAL_PIN); // Kanal Ausgang
-      
-   DDRD |= (1<<PORTD5); //  Ausgang
-   PORTD |= (1<<PORTD5); //  Ausgang
+//   KANAL_PORT |= (1<<KANAL_PIN);
+
+//   DDRD |= (1<<PORTD5); //  Ausgang
+//   PORTD |= (1<<PORTD5); //  Ausgang
 
    //TCCR1A = (1<<COM1A0) | (1<<COM1A1);// | (1<<WGM11);	// OC1B set on match, set on TOP
    //TCCR1B = (1<<WGM13) | (1<<WGM12) ;		// TOP = ICR1, clk = sysclk/8 (->1us)
@@ -340,12 +340,13 @@ void timer1_init(void)
    TIMSK1 |= (1 << OCIE1B);  // enable timer compare interrupt:
    
    //KANAL_PORT |= (1<<PORTB5); // Ausgang HI
-   //OSZI_A_LO ;
+//   OSZI_A_LO ;
    //OSZI_B_LO ;
    
    
-   KANAL_HI;
-   
+   //KANAL_HI;
+   KANAL_PORT |= (1<<KANAL_PIN);
+   OSZI_A_LO;
    impulscounter = 0;
    
       if (Servo_ArrayInt[impulscounter] > SERVOMAX)
@@ -372,7 +373,7 @@ void timer1_stop(void)
 }
 
 
-
+#pragma mark timer1 COMPA-vect
 
 ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
 {
@@ -382,10 +383,13 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
    
    if (impulscounter < ANZ_POT)
    {
+      
       // Start Impuls
-      KANAL_HI;
-      TCNT1  = 0;
       //KANAL_HI;
+      KANAL_PORT |= (1<<KANAL_PIN);
+      OSZI_A_LO;
+      TCNT1  = 0;
+      
       
       // Laenge des naechsten Impuls setzen
       
@@ -403,16 +407,16 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
          
          OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
       
-      
+     
       
    }
    else
    {
       // Ende Impulspaket
       //OCR1A  = 0x4FF;
-      //OSZI_A_HI ;
      // _delay_us(200);
       //KANAL_LO;
+      KANAL_PORT &= ~(1<<KANAL_PIN);
 
       // Alle Impulse gesendet, Timer1 stop. Timer1 wird bei Beginn des naechsten Paketes wieder gestartet
       timer1_stop();
@@ -420,12 +424,10 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       // SPI fuer device ausschalten
       spi_end();
       potstatus |= (1<<SPI_END); //       
-      //OSZI_B_HI ;
-      //OSZI_A_LO ;
       
       //MASTER_PORT &= ~(1<<MASTER_EN_PIN); // Master schickt Enable an Slave
       _delay_us(2);
-      //PORTE |= (1<<PORTE0);
+      
       MASTER_PORT |= (1<<MASTER_EN_PIN);
       
    }
@@ -439,11 +441,9 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
 #pragma mark timer1 COMPB-vect
 ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
 {
-   //OSZI_A_LO ;
-   //PORTB &= ~(1<<PORTB5); // OC1A Ausgang
-   //OSZI_A_HI ;
-   KANAL_LO;
-   
+   //KANAL_LO;
+   KANAL_PORT &= ~(1<<KANAL_PIN);
+   OSZI_A_HI;
    if (impulscounter < ANZ_POT)
    {
       
@@ -451,8 +451,6 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
    else
    {
       timer1_stop();
-     // OSZI_B_HI ;
-            
    }
 }
 
@@ -500,8 +498,9 @@ volatile uint16_t timer2Counter=0;
 volatile uint16_t timer2BatterieCounter=0;
 #pragma mark timer2 OVF-vect
 
-ISR (TIMER2_OVF_vect)
-{ 
+ISR (TIMER2_OVF_vect) // 75 us
+{
+   
 	timer2Counter ++;
    if (timer2Counter >= 0x01E0) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
@@ -521,7 +520,6 @@ ISR (TIMER2_OVF_vect)
          }
       }
 		timer2Counter = 0;
-      //OSZI_A_LO ;
 	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
    //OSZI_A_HI ;
@@ -546,13 +544,13 @@ ISR (PCINT0_vect)
    
    if(INTERRUPT_PIN & (1<< SUB_BUSY_PIN))// LOW to HIGH pin change, Sub wieder ON
    {
-      OSZI_B_HI;
+ //     OSZI_B_HI;
       masterstatus &= ~(1<<SUB_BUSY_BIT); // Master ist wieder frei
       
    }
    else // HIGH to LOW pin change, Sub OFF
    {
-      OSZI_B_LO;
+ //     OSZI_B_LO;
       
       masterstatus |= (1<<SUB_BUSY_BIT); // Master muss warten
 
@@ -732,7 +730,8 @@ int main (void)
    for(i=0;i< 8;i++)
    {
       Mitte_Array[i] = MITTE;
-      POT_Array[i] = 0x600;
+      POT_Array[i] = MITTE;
+      
      
    }
 //   potstatus |= (1<< POT_MITTE);
@@ -797,16 +796,11 @@ int main (void)
       }
       else // Slave ist HALT
       {
-         //OSZI_A_TOGG ;
-         
          spi_end();
          masterstatus |= (1<<HALT);
          MASTER_PORT |= (1<<MASTER_EN_PIN);
-         //cli();
         
          timer2Counter=0;
-         //continue;
-     
       }
       
       
@@ -826,12 +820,9 @@ int main (void)
  //        MASTER_PORT |= (1<<MASTER_EN_PIN); // Sub abstellen
          _delay_us(2);
          
-         //OSZI_B_LO;
-         
          potstatus &= ~(1<< SPI_START);   // Bit zuruecksetzen
          
          uint8_t i=0;
-         
          //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
          {
             // ADC init, Pot lesen
@@ -847,40 +838,32 @@ int main (void)
                {
                   
                   //POT_Array[i] = 0x600;
-                  OSZI_A_LO ;
                   cli();
                   //POT_Array[i] = POT_FAKTOR * MCP3208_spiRead(SingleEnd,i); // globaler Korr.Faktor fuer Servowert
                   uint16_t tempdata =MCP3208_spiRead(SingleEnd,i);
                   if (tempdata)
                   {
-                     POT_Array[i] = tempdata*3/4;
+                     //POT_Array[i] = tempdata*3/4;
+                     POT_Array[i] = tempdata*5/8 ; // Mit SteuerknŸppel
+                     //POT_Array[i] = tempdata/2 + 0x210; // Mit SteuerknŸppel
                   }
                   else
                   {
                      _delay_us(5);
-                     OSZI_A_LO ;
                      adc_errcount++;
                      masterstatus |= (1<<ADC_ALARM_BIT);
-                     
-                     OSZI_A_HI ;
 
                   }
-                  
-                  //POT_Array[i] = MCP3208_spiRead(SingleEnd,i)*3/4; // globaler Korr.Faktor fuer Servowert
-                  //_delay_us(5);
                   sei();
-                  OSZI_A_HI ;
                   /*
                   if (POT_Array[i]==0)
                   {
                      _delay_us(5);
-                     OSZI_A_LO ;
                      adc_errcount++;
                      masterstatus |= (1<<ADC_ALARM_BIT);
                      
                      POT_Array[i] = 0x600;
                      
-                     OSZI_A_HI ;
                   }
                    */
                   //POT_Array[i] = 0x600;
@@ -894,11 +877,12 @@ int main (void)
                {
                   POT_Array[i] = 0x600;
                }
+               
             }
             anzeigecounter++;
          }
          
-         //OSZI_A_HI ;
+         
          // Mittelwert speichern
          
          if (potstatus & (1<< POT_MITTE))
@@ -913,8 +897,8 @@ int main (void)
          
          // Daten zu POT-Werten aus eeprom
          //
-         MASTER_PORT &= ~(1<<MASTER_EN_PIN);
          
+         MASTER_PORT &= ~(1<<MASTER_EN_PIN);
          _delay_us(5);
          SPI_PORT_Init();
          
@@ -925,10 +909,9 @@ int main (void)
          
          // MARK Servodaten aufbereiten
          
-         //OSZI_A_LO ;
          for(i=0;i< 8;i++)
          {
-            if ((i < 2) ) // 2 Steuerknueppel und 2 Schieber
+            if ((i < 4) ) // 2 Steuerknueppel und 2 Schieber
             {
                
                // Level fuer beide Seiten nach Settings
@@ -950,7 +933,6 @@ int main (void)
 
                stufe = 0;
                
-               //OSZI_A_LO ;
                // Wert fuer adcdata an Adresse in EEPROM lesen, 2 bytes
                // diff: adcwert - mitte. Auf der einen Seite addieren, auf der anderen subtrahieren
                cli();
@@ -994,8 +976,7 @@ int main (void)
 
                }
               
-                              // MARK: Integerberechnungen
-               //OSZI_A_HI ;
+               // MARK: Integerberechnungen
                // start signed int
                
                   // 16bit-wert
@@ -1044,7 +1025,6 @@ int main (void)
          //testdataarray[4] = abs(Servo_ArrayInt[0]) & 0x00FF;
          //testdataarray[5] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
          
-         //OSZI_A_HI ;
          // Servodaten mit Mix verarbeiten
          // Mix_Array 0: canals
          
@@ -1216,13 +1196,10 @@ int main (void)
                // Kontrolle: testdata in-out
                RAM_CS_LO;
                _delay_us(LOOPDELAY);
-               //      OSZI_A_LO;
                spiram_wrbyte(testaddress, testdata);
-               //     OSZI_A_HI;
                RAM_CS_HI;
                
                // Pot-Daten schicken
-               //OSZI_A_LO ;
                for (i=0;i< 8;i++)
                {
                      RAM_CS_LO;
@@ -1285,7 +1262,6 @@ int main (void)
                       // task_in im RAM zuruecksetzen
                       RAM_CS_LO;
                       spiram_wrbyte(READ_TASKADRESSE, 0);
-                      //OSZI_A_HI;
                       RAM_CS_HI;
                       
                       readSettings(task_indata);
@@ -1343,7 +1319,6 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   RAM_CS_LO;
                   spiram_wrbyte(READ_TASKADRESSE, 0);
-                  //OSZI_A_HI;
                   RAM_CS_HI;
                   
                   loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
@@ -1355,7 +1330,6 @@ int main (void)
                _delay_us(LOOPDELAY);
                RAM_CS_LO;
                spiram_wrbyte(WRITE_TASKADRESSE, task_outdata);
-               //OSZI_A_HI;
                RAM_CS_HI;
                
                // Kontrolle
@@ -1393,9 +1367,7 @@ int main (void)
                RAM_CS_LO;
                
                _delay_us(LOOPDELAY);
-               //      OSZI_A_LO;
                spiram_wrbyte(7, ram_errcount);
-               //     OSZI_A_HI;
                RAM_CS_HI;
                
                _delay_us(LOOPDELAY);
@@ -1467,7 +1439,6 @@ int main (void)
                {
                   //      abschnittnummer=0; // nach Master-Vorgang Position des Counters fuer PageWrite zuruecksetzen
                }
-               //OSZI_A_HI ;
                
             } // if busy_pin
             
