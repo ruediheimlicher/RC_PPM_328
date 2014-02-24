@@ -68,8 +68,11 @@
 #define RAM_SEND_LCD_TASK         1 // LCD soll Task lesen (Auftrag AN LCD)
 #define RAM_RECV_LCD_TASK         2 // RAM soll Task lesen (Auftrag VON PPM)
 
+
+
 #define RAM_SEND_DOGM_TASK 3
 
+#define RAM_SEND_TRIMM_TASK      4
 
 #define RAM_TASK_OK              7 // Task gelesen
 
