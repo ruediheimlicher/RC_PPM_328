@@ -83,6 +83,7 @@ volatile uint8_t          Expo_Array[SPI_BUFSIZE]; // Expo und Richtung Einstell
 volatile uint8_t          Level_Array[SPI_BUFSIZE]; // Ausgangslevel-Einstellungen pro kanal
 volatile uint8_t          Mix_Array[SPI_BUFSIZE]; // Mixing-Einstellungen pro model
 
+volatile int8_t              Trimmung_Array[8]; // signed int. Trimmung-Werte fuer Device 0-3
 
 volatile uint16_t          Batteriespannung =0;
 volatile short int         received=0;
@@ -926,7 +927,7 @@ int main (void)
                uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
                
                // Mitte aus Settings
-               mitte = Mitte_Array[i];
+               mitte = Mitte_Array[i] + Trimmung_Array[i];
               
                diff= mitte;
                adcdata = POT_Array[i]; // gemessener Potwert
@@ -1340,18 +1341,35 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_HI;
                   RAM_CS_HI;
+
+                  
                   
                   task_counter++;
                   
+                  // Trimm lesen
+                  
+                  RAM_CS_LO;
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_LO;
+                  _delay_us(LOOPDELAY);
+                  uint8_t trimm = spiram_rdbyte(RAM_TRIMM_OFFSET+ task_indata);
+                  Trimmung_Array[task_indata] = trimm - 0x7F; // signed int
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_HI;
+                  RAM_CS_HI;
+
+                  /*
                   lcd_gotoxy(10,1);
                   lcd_putc('R');
                   lcd_puthex(task_in);
                   lcd_putc('d');
                   lcd_puthex(task_indata);
                   lcd_putc('c');
-                  lcd_puthex(task_counter);
+                  lcd_puthex(trimm);
                   //lcd_putc('+');
                   _delay_us(LOOPDELAY);
+                  */
+                  
                   
                   // task_in im RAM zuruecksetzen
                   RAM_CS_LO;

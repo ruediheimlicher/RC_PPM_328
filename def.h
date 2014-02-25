@@ -65,8 +65,14 @@
 #define WRITE_TASKADRESSE        0x1FA     // RAM_Adresse fuer Task-Auftrag an RC_LCD
 #define WRITE_TASKDATA           0x1FB
 
+#define RAM_TRIMM_OFFSET         0x2F0    // Startadresse fuer Trimmdaten
+
+
+
 #define RAM_SEND_LCD_TASK         1 // LCD soll Task lesen (Auftrag AN LCD)
 #define RAM_RECV_LCD_TASK         2 // RAM soll Task lesen (Auftrag VON PPM)
+
+// TRIMM_Tasks
 
 
 
