@@ -1341,42 +1341,82 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_HI;
                   RAM_CS_HI;
-
-                  
                   
                   task_counter++;
                   
                   // Trimm lesen
                   
-                  RAM_CS_LO;
-                  _delay_us(LOOPDELAY);
-                  //     OSZI_B_LO;
-                  _delay_us(LOOPDELAY);
-                  uint8_t trimm = spiram_rdbyte(RAM_TRIMM_OFFSET+ task_indata);
-                  Trimmung_Array[task_indata] = trimm - 0x7F; // signed int
-                  _delay_us(LOOPDELAY);
-                  //     OSZI_B_HI;
-                  RAM_CS_HI;
+                  
+                  if (task_indata == 0xFF)// alle schreiben
+                  {
+                     uint8_t pos=0;
+                     for (pos=0;pos<4;pos++)
+                     {
+                        RAM_CS_LO;
+                        _delay_us(LOOPDELAY);
+                        //     OSZI_B_LO;
+                        _delay_us(LOOPDELAY);
+                        uint8_t trimm = spiram_rdbyte(RAM_TRIMM_OFFSET+ pos);
+                        Trimmung_Array[pos] = trimm - 0x7F; // signed int
+                        _delay_us(LOOPDELAY);
+                        //     OSZI_B_HI;
+                        RAM_CS_HI;
+                        
+                        /*
+                         lcd_gotoxy(10,1);
+                         lcd_putc('R');
+                         lcd_puthex(task_in);
+                         lcd_putc('d');
+                         lcd_puthex(task_indata);
+                         lcd_putc('c');
+                         lcd_puthex(trimm);
+                         //lcd_putc('+');
+                         _delay_us(LOOPDELAY);
+                         */
+                        
+                        
+                        // task_in im RAM zuruecksetzen
+ 
+                     }
+                     RAM_CS_LO;
+                     spiram_wrbyte(READ_TASKADRESSE, 0);
+                     RAM_CS_HI;
 
-                  /*
-                  lcd_gotoxy(10,1);
-                  lcd_putc('R');
-                  lcd_puthex(task_in);
-                  lcd_putc('d');
-                  lcd_puthex(task_indata);
-                  lcd_putc('c');
-                  lcd_puthex(trimm);
-                  //lcd_putc('+');
-                  _delay_us(LOOPDELAY);
-                  */
-                  
-                  
-                  // task_in im RAM zuruecksetzen
-                  RAM_CS_LO;
-                  spiram_wrbyte(READ_TASKADRESSE, 0);
-                  RAM_CS_HI;
-                  
-                     // Task:
+                     
+                  }
+                  else
+                  {
+                     
+                     RAM_CS_LO;
+                     _delay_us(LOOPDELAY);
+                     //     OSZI_B_LO;
+                     _delay_us(LOOPDELAY);
+                     uint8_t trimm = spiram_rdbyte(RAM_TRIMM_OFFSET+ task_indata);
+                     Trimmung_Array[task_indata] = trimm - 0x7F; // signed int
+                     _delay_us(LOOPDELAY);
+                     //     OSZI_B_HI;
+                     RAM_CS_HI;
+                     
+                     /*
+                      lcd_gotoxy(10,1);
+                      lcd_putc('R');
+                      lcd_puthex(task_in);
+                      lcd_putc('d');
+                      lcd_puthex(task_indata);
+                      lcd_putc('c');
+                      lcd_puthex(trimm);
+                      //lcd_putc('+');
+                      _delay_us(LOOPDELAY);
+                      */
+                     
+                     
+                     // task_in im RAM zuruecksetzen
+                     RAM_CS_LO;
+                     spiram_wrbyte(READ_TASKADRESSE, 0);
+                     RAM_CS_HI;
+                     
+                  }
+                  // Task:
                   
                   task_in &= ~(1<<RAM_SEND_TRIMM_TASK);
                   // Quittung an LCD
