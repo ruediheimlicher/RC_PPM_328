@@ -75,7 +75,7 @@ volatile uint16_t          POT_Array[SPI_BUFSIZE];
 
 volatile int16_t          Servo_ArrayInt[SPI_BUFSIZE]; // signed Int
 
-volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
+//volatile uint16_t          Mitte_Array[SPI_BUFSIZE];
 
 volatile uint16_t          RAM_Array[SPI_BUFSIZE];
 
@@ -119,7 +119,7 @@ volatile    uint8_t task_outdata=0; // Taskdata an RC_LCD
 volatile    uint8_t task_counter=0;
 
 
-volatile uint8_t testdataarray[8]={};
+//volatile uint8_t testdataarray[8]={};
 volatile uint16_t teststartadresse=0x00A0;
 
 void startTimer2(void)
@@ -559,7 +559,7 @@ ISR (PCINT0_vect)
    
 }
 
-
+/*
 void setMitte(void)
 {
    for (uint8_t i=0;i< SPI_BUFSIZE;i++)
@@ -567,7 +567,7 @@ void setMitte(void)
       Mitte_Array[i] = POT_Array[i];
    }
 }
-
+*/
 void writeRamByte(uint16_t adresse , uint8_t data)
 {
    RAM_CS_LO;
@@ -730,7 +730,7 @@ int main (void)
    // Pot-Array, Mitte-Array  initialisieren
    for(i=0;i< 8;i++)
    {
-      Mitte_Array[i] = MITTE;
+      //Mitte_Array[i] = MITTE;
       POT_Array[i] = MITTE;
       
      
@@ -927,7 +927,8 @@ int main (void)
                uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
                
                // Mitte aus Settings
-               mitte = Mitte_Array[i] + Trimmung_Array[i];
+               //mitte = Mitte_Array[i] + Trimmung_Array[i];
+               mitte = MITTE + Trimmung_Array[i];
               
                diff= mitte;
                adcdata = POT_Array[i]; // gemessener Potwert
@@ -957,9 +958,9 @@ int main (void)
                sei();
                if (i==0)
                {
-                  testdataarray[0] = adcdata & 0x00FF;
-                  testdataarray[1] = (adcdata & 0xFF00)>>8;
-           //       testdataarray[2] = Level_Array[i];
+            //     testdataarray[0] = adcdata & 0x00FF;
+            //    testdataarray[1] = (adcdata & 0xFF00)>>8;
+            //       testdataarray[2] = Level_Array[i];
             //      testdataarray[3] = Expo_Array[i];
                   
                   //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
@@ -972,8 +973,8 @@ int main (void)
               // testdataarray[4] = diff & 0x00FF;
               // testdataarray[5] = (diff & 0xFF00)>>8;
 
-                 testdataarray[4] = diffdatalo;
-                 testdataarray[5] = diffdatahi;
+              //   testdataarray[4] = diffdatalo;
+              //   testdataarray[5] = diffdatahi;
 
                }
               
@@ -1005,8 +1006,8 @@ int main (void)
                if (i==0)
                {
 
-                testdataarray[6] = abs(diffdataInt) & 0x00FF;
-                testdataarray[7] = (abs(diffdataInt) & 0xFF00)>>8;
+              //  testdataarray[6] = abs(diffdataInt) & 0x00FF;
+              //  testdataarray[7] = (abs(diffdataInt) & 0xFF00)>>8;
                }
                
                   if (richtung ) // Richtung umkehren
@@ -1069,7 +1070,8 @@ int main (void)
          // Mitte addieren
          for (i=0;i<8;i++)
          {
-            Servo_ArrayInt[i] += Mitte_Array[i];
+            Servo_ArrayInt[i] += MITTE;
+            //Servo_ArrayInt[i] += Mitte_Array[i];
          }
          sei();
          
