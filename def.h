@@ -186,7 +186,9 @@
 
 #define EE_READ_SETTINGS   4
 
-#define MITTE 0x564 // Neutralstellung 1.5ms
+#define MITTE 0x5E0 // Neutralstellung 1.5ms
+
+//#define MITTE 0x3B6 // Neutralstellung 1.5ms
 
 
 // Bit

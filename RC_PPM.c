@@ -393,6 +393,8 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       
       
       // Laenge des naechsten Impuls setzen
+      
+      /*
       uint16_t tempServoWert=Servo_ArrayInt[impulscounter];
       
       if (tempServoWert > SERVOMAX)
@@ -405,10 +407,10 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
          tempServoWert = SERVOMIN;
       }
       OCR1A  = tempServoWert; // POT_Faktor schon nach ADC
-   
+   */
       
       
-      /*
+      
          if (Servo_ArrayInt[impulscounter] > SERVOMAX)
          {
             Servo_ArrayInt[impulscounter] = SERVOMAX;
@@ -419,7 +421,7 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
             Servo_ArrayInt[impulscounter] = SERVOMIN;
          }
          OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
-       */
+      
      
       
    }
@@ -848,6 +850,10 @@ int main (void)
             spiadc_init();
             // MARK: Pot lesen
             
+            mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte
+            
+            
+      
             for(i=0;i< ANZ_POT;i++)
             {
                
@@ -861,7 +867,7 @@ int main (void)
                   if (tempdata)
                   {
                      //POT_Array[i] = tempdata*3/4;
-                     POT_Array[i] = tempdata*5/8 ; // Mit SteuerknŸppel
+                     POT_Array[i] = tempdata;//*5/8 ; // Mit SteuerknŸppel
                      //POT_Array[i] = tempdata/2 + 0x210; // Mit SteuerknŸppel
                   }
                   else
@@ -944,7 +950,7 @@ int main (void)
                
                // Mitte aus Settings
                //mitte = Mitte_Array[i] + Trimmung_Array[i];
-               mitte = MITTE;// + 2*Trimmung_Array[i];
+               //mitte = MITTE;// + 2*Trimmung_Array[i];
               
                diff= mitte;
                adcdata = POT_Array[i]; // gemessener Potwert
@@ -957,15 +963,26 @@ int main (void)
                if (adcdata > mitte) // Seite A
                {
                   diff = adcdata - mitte;
+                  
+                  diff *=4;
+                  diff /= 8;
+                 
+                  
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
                }
                else // Seite B
                {
                   diff = mitte - adcdata;
+                  
+                  diff *=4;
+                  diff /= 8;
+                  
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
                }
+               
+               
                
                
                sei();
@@ -978,8 +995,8 @@ int main (void)
  
                   testdataarray[0] = POT_Array[0] & 0x00FF;
                   testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
-                  testdataarray[0] = POT_Array[1] & 0x00FF;
-                  testdataarray[1] = (POT_Array[1] & 0xFF00)>>8;
+                  testdataarray[2] = POT_Array[1] & 0x00FF;
+                  testdataarray[3] = (POT_Array[1] & 0xFF00)>>8;
 
                   //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
                   //testdataarray[5] = (uint8_t)spieeprom_rdbyte(2*diff+1);
@@ -1086,7 +1103,7 @@ int main (void)
          //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
-         for (i=0;i<8;i++)
+         for (i=0;i<4;i++)
          {
             Servo_ArrayInt[i] += MITTE;
             //Servo_ArrayInt[i] += Mitte_Array[i];
