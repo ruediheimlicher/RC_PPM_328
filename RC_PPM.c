@@ -83,7 +83,7 @@ volatile uint8_t          Expo_Array[SPI_BUFSIZE]; // Expo und Richtung Einstell
 volatile uint8_t          Level_Array[SPI_BUFSIZE]; // Ausgangslevel-Einstellungen pro kanal
 volatile uint8_t          Mix_Array[SPI_BUFSIZE]; // Mixing-Einstellungen pro model
 
-volatile int8_t              Trimmung_Array[8]; // signed int. Trimmung-Werte fuer Device 0-3
+volatile int8_t             Trimmung_Array[8]; // signed int. Trimmung-Werte fuer Device 0-3
 
 volatile uint16_t          Batteriespannung =0;
 volatile short int         received=0;
@@ -91,11 +91,11 @@ volatile short int         received=0;
 volatile uint16_t          abschnittnummer=0;
 volatile uint16_t          usbcount=0;
 
-volatile uint16_t          minwert=0xFFFF;
-volatile uint16_t          maxwert=0;
+volatile uint16_t             minwert=0xFFFF;
+volatile uint16_t             maxwert=0;
 volatile int16_t             canalwerta=0;
 volatile int16_t             canalwertb=0;
-volatile uint8_t           mixcanal=0;
+volatile uint8_t              mixcanal=0;
 
 volatile uint8_t richtung=0;
 volatile uint16_t mitte = 0;
@@ -119,7 +119,7 @@ volatile    uint8_t task_outdata=0; // Taskdata an RC_LCD
 volatile    uint8_t task_counter=0;
 
 
-//volatile uint8_t testdataarray[8]={};
+volatile uint8_t testdataarray[8]={};
 volatile uint16_t teststartadresse=0x00A0;
 
 void startTimer2(void)
@@ -393,8 +393,22 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       
       
       // Laenge des naechsten Impuls setzen
+      uint16_t tempServoWert=Servo_ArrayInt[impulscounter];
+      
+      if (tempServoWert > SERVOMAX)
+      {
+         tempServoWert = SERVOMAX;
+      }
+      
+      if (tempServoWert < SERVOMIN)
+      {
+         tempServoWert = SERVOMIN;
+      }
+      OCR1A  = tempServoWert; // POT_Faktor schon nach ADC
+   
       
       
+      /*
          if (Servo_ArrayInt[impulscounter] > SERVOMAX)
          {
             Servo_ArrayInt[impulscounter] = SERVOMAX;
@@ -404,10 +418,8 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
          {
             Servo_ArrayInt[impulscounter] = SERVOMIN;
          }
-         
-         
          OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
-      
+       */
      
       
    }
@@ -503,7 +515,7 @@ ISR (TIMER2_OVF_vect) // 75 us
 {
    
 	timer2Counter ++;
-   if (timer2Counter >= 0x01E0) // Laenge des Impulspakets 20ms Atmega328
+   if (timer2Counter >= 0x01FF) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
       
@@ -610,7 +622,7 @@ void readSettings(uint8_t modelindex)
     }
    
 
-   lcd_gotoxy(0,1);
+//   lcd_gotoxy(0,1);
    /*
    lcd_putc('E');
    lcd_putc(' ');
@@ -624,6 +636,8 @@ void readSettings(uint8_t modelindex)
    lcd_puthex(Level_Array[1]);
    lcd_putc(' ');
  */
+   
+   /*
    lcd_putc('L');
    //lcd_putc(' ');
    lcd_puthex(Level_Array[0]);
@@ -631,6 +645,8 @@ void readSettings(uint8_t modelindex)
    //lcd_putc(' ');
    lcd_puthex(Level_Array[2]);
    lcd_puthex(Level_Array[3]);
+    
+    */
 /*
    lcd_putc(' ');
    lcd_putc('M');
@@ -853,7 +869,7 @@ int main (void)
                      _delay_us(5);
                      adc_errcount++;
                      masterstatus |= (1<<ADC_ALARM_BIT);
-
+                     POT_Array[i] = MITTE;
                   }
                   sei();
                   /*
@@ -876,7 +892,7 @@ int main (void)
                }
                else
                {
-                  POT_Array[i] = 0x600;
+                  POT_Array[i] = MITTE;
                }
                
             }
@@ -928,7 +944,7 @@ int main (void)
                
                // Mitte aus Settings
                //mitte = Mitte_Array[i] + Trimmung_Array[i];
-               mitte = MITTE + Trimmung_Array[i];
+               mitte = MITTE;// + 2*Trimmung_Array[i];
               
                diff= mitte;
                adcdata = POT_Array[i]; // gemessener Potwert
@@ -940,29 +956,31 @@ int main (void)
                cli();
                if (adcdata > mitte) // Seite A
                {
-                  
                   diff = adcdata - mitte;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
-               
-               
                }
                else // Seite B
                {
-                  
                   diff = mitte - adcdata;
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
-                  
                }
+               
+               
                sei();
                if (i==0)
                {
-            //     testdataarray[0] = adcdata & 0x00FF;
+            //    testdataarray[0] = adcdata & 0x00FF;
             //    testdataarray[1] = (adcdata & 0xFF00)>>8;
-            //       testdataarray[2] = Level_Array[i];
-            //      testdataarray[3] = Expo_Array[i];
-                  
+            //    testdataarray[2] = Level_Array[i];
+            //    testdataarray[3] = Expo_Array[i];
+ 
+                  testdataarray[0] = POT_Array[0] & 0x00FF;
+                  testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
+                  testdataarray[0] = POT_Array[1] & 0x00FF;
+                  testdataarray[1] = (POT_Array[1] & 0xFF00)>>8;
+
                   //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
                   //testdataarray[5] = (uint8_t)spieeprom_rdbyte(2*diff+1);
 
@@ -1203,7 +1221,7 @@ int main (void)
                RAM_CS_HI;
                
                // Pot-Daten schicken
-               for (i=0;i< 8;i++)
+               for (i=0;i< 4;i++)
                {
                      RAM_CS_LO;
                      _delay_us(LOOPDELAY);
@@ -1218,7 +1236,7 @@ int main (void)
                      _delay_us(LOOPDELAY);
                      RAM_CS_HI;
                   
-               //   writeRamByte(teststartadresse+i,testdataarray[i]);
+                  writeRamByte(teststartadresse+i,testdataarray[i]);
                }
                
                // Task lesen
@@ -1332,8 +1350,6 @@ int main (void)
                {
                   //lcd_gotoxy(19,1);
                   // lcd_putc('A'+(task_counter&0x03));
-                  
-                  
                   
                   RAM_CS_LO;
                   _delay_us(LOOPDELAY);
