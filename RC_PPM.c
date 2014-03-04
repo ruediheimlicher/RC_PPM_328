@@ -647,8 +647,8 @@ void readSettings(uint8_t modelindex)
    //lcd_putc(' ');
    lcd_puthex(Level_Array[2]);
    lcd_puthex(Level_Array[3]);
-    
-    */
+   */
+   
 /*
    lcd_putc(' ');
    lcd_putc('M');
@@ -660,7 +660,13 @@ void readSettings(uint8_t modelindex)
    lcd_puthex(Mix_Array[3]);
 */
 
-   
+   // Trimm lesen
+   readstartadresse = TASK_OFFSET  + TRIMM_OFFSET + modelindex*SETTINGBREITE;
+   for (pos=0;pos<4;pos++)
+   {
+      Trimmung_Array[pos] = spieeprom_rdbyte(readstartadresse+pos)-0x7F; // offset
+   }
+
 
 }
 
@@ -1052,7 +1058,8 @@ int main (void)
                   }
                
                    // Wert speichern, nachher in Mix weiter anpassen
-                  Servo_ArrayInt[i] = diffdataInt; // mit Vorzeichen
+               Servo_ArrayInt[i] = diffdataInt + 4*Trimmung_Array[i];
+ // mit Vorzeichen
                   
                   // end signed int
                
@@ -1316,7 +1323,7 @@ int main (void)
                }
                */
                
-               if ((task_in & (1<<RAM_RECV_LCD_TASK)) || (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
+               if ((task_in & (1<<RAM_RECV_LCD_TASK)) )//|| (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
                   
                  if (task_in & (1<<RAM_RECV_LCD_TASK))
@@ -1336,6 +1343,7 @@ int main (void)
                   //     OSZI_B_HI;
                   RAM_CS_HI;
                   
+                  /*
                   lcd_gotoxy(10,0);
                   lcd_putc('T');
                   lcd_puthex(task_in);
@@ -1345,7 +1353,7 @@ int main (void)
                   lcd_puthex(task_counter);
                   
                   lcd_clr_line(1);
-                  
+                  */
                   readSettings(task_indata);
                   
                   // Quittung an LCD
@@ -1397,17 +1405,25 @@ int main (void)
                         //     OSZI_B_HI;
                         RAM_CS_HI;
                         
-                        /*
+                        if (pos==0)
+                        {
                          lcd_gotoxy(10,1);
-                         lcd_putc('R');
-                         lcd_puthex(task_in);
-                         lcd_putc('d');
-                         lcd_puthex(task_indata);
-                         lcd_putc('c');
-                         lcd_puthex(trimm);
-                         //lcd_putc('+');
+                         lcd_putc('A');
+                         //lcd_puthex(task_in);
+                         //lcd_putc('d');
+                         //lcd_puthex(task_indata);
+                         lcd_putc(' ');
+                        }
+                        if (pos<2)
+                        {
+                           lcd_gotoxy(12+pos,1);
+
+                           lcd_puthex(trimm);
+                           lcd_putc(' ');
+                          
+                        }
                          _delay_us(LOOPDELAY);
-                         */
+                        
                         
                         
                         // task_in im RAM zuruecksetzen
@@ -1432,17 +1448,17 @@ int main (void)
                      //     OSZI_B_HI;
                      RAM_CS_HI;
                      
-                     /*
+                     
                       lcd_gotoxy(10,1);
-                      lcd_putc('R');
+                      lcd_putc('T');
                       lcd_puthex(task_in);
                       lcd_putc('d');
-                      lcd_puthex(task_indata);
-                      lcd_putc('c');
+                      lcd_puthex(task_indata);// Device
+                      lcd_putc('t');
                       lcd_puthex(trimm);
                       //lcd_putc('+');
                       _delay_us(LOOPDELAY);
-                      */
+                     
                      
                      
                      // task_in im RAM zuruecksetzen

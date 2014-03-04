@@ -58,6 +58,7 @@
 #define EXPO_OFFSET              0x30
 #define LEVEL_OFFSET             0x20
 #define MIX_OFFSET               0x40
+#define  TRIMM_OFFSET            0x50 // 80
 
 #define READ_TASKADRESSE         0x1F0     // RAM_Adresse fuer  Task-Auftrag von RC_LCD
 #define READ_TASKDATA            0x1F1
