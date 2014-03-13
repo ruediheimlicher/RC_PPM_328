@@ -385,7 +385,7 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
    
    impulscounter++;
    
-   if (impulscounter < ANZ_POT)
+   if (impulscounter < ANZ_IMPULSE)
    {
       
       // Start Impuls
@@ -462,7 +462,7 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
    //KANAL_LO;
    KANAL_PORT &= ~(1<<KANAL_PIN);
    //OSZI_A_HI;
-   if (impulscounter < ANZ_IMPULSE)
+   if (impulscounter <= ANZ_IMPULSE)
    {
       
    }
