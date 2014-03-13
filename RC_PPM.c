@@ -83,7 +83,7 @@ volatile uint8_t          Expo_Array[SPI_BUFSIZE]; // Expo und Richtung Einstell
 volatile uint8_t          Level_Array[SPI_BUFSIZE]; // Ausgangslevel-Einstellungen pro kanal
 volatile uint8_t          Mix_Array[SPI_BUFSIZE]; // Mixing-Einstellungen pro model
 
-volatile int8_t             Trimmung_Array[8]; // signed int. Trimmung-Werte fuer Device 0-3
+volatile int8_t            Trimmung_Array[SPI_BUFSIZE]; // signed int. Trimmung-Werte fuer Device 0-3
 
 volatile uint16_t          Batteriespannung =0;
 volatile short int         received=0;
@@ -462,7 +462,7 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
    //KANAL_LO;
    KANAL_PORT &= ~(1<<KANAL_PIN);
    //OSZI_A_HI;
-   if (impulscounter < ANZ_POT)
+   if (impulscounter < ANZ_IMPULSE)
    {
       
    }
