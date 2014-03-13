@@ -190,7 +190,7 @@
 
 #define MITTE 0x5E0 // Neutralstellung 1.5ms
 
-//#define MITTE 0x3B6 // Neutralstellung 1.5ms
+//#define MITTE 0x3B6 // Neutralstellung 1.5ms. Eichung nach Timerwert
 
 
 // Bit
