@@ -862,14 +862,14 @@ int main (void)
             
             if (mitte==0)
             {
-            mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte
+               mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte
             }
             
       
             for(i=0;i< ANZ_POT;i++)
             {
                
-               if ((i<5) )
+               if ((i<6) )
                {
                   
                   //POT_Array[i] = 0x600;
@@ -886,7 +886,7 @@ int main (void)
                   {
                      _delay_us(5);
                      adc_errcount++;
-¬                    // POT_Array[i] = MITTE;
+                   // POT_Array[i] = MITTE;
                   }
                   sei();
                   
@@ -938,7 +938,7 @@ int main (void)
          
          // MARK Servodaten aufbereiten
          
-         for(i=0;i< 8;i++)
+         for(i=0;i< ANZ_POT;i++)
          {
             if ((i < 6) ) // 2 Steuerknueppel und 2 Schieber
             {
@@ -1077,7 +1077,7 @@ int main (void)
          // Mix_Array 1: mixart
          
         
-         for (i=0;i<6;i++) // 50 us
+         for (i=0;i<ANZ_POT;i++) // 50 us
          {
             // Mixing lesen
             
@@ -1112,7 +1112,7 @@ int main (void)
          //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
-         for (i=0;i<4;i++)
+         for (i=0;i<ANZ_POT-2;i++)
          {
             Servo_ArrayInt[i] += MITTE;
             //Servo_ArrayInt[i] += Mitte_Array[i];
