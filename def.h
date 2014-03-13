@@ -208,6 +208,7 @@
 #define POT_MITTE 7  //    Mittelwerte der Potentiometer speichern
 
 #define ANZ_POT   6
+#define ANZ_IMPULSE   6
 
 #define POT_FAKTOR 0.75
 

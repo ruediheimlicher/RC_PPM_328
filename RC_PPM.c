@@ -866,7 +866,7 @@ int main (void)
             }
             
       
-            for(i=0;i< ANZ_POT;i++)
+            for(i=0;i< ANZ_POT+1;i++)
             {
                
                if ((i<6) )
@@ -938,9 +938,9 @@ int main (void)
          
          // MARK Servodaten aufbereiten
          
-         for(i=0;i< ANZ_POT;i++)
+         for(i=0;i< ANZ_IMPULSE;i++)
          {
-            if ((i < 6) ) // 2 Steuerknueppel und 2 Schieber
+            if ((i < ANZ_POT) ) // 2 Steuerknueppel und 2 Schieber
             {
                
                // Level fuer beide Seiten nach Settings
@@ -1112,7 +1112,7 @@ int main (void)
          //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
-         for (i=0;i<ANZ_POT-2;i++)
+         for (i=0;i<ANZ_POT-1;i++)
          {
             Servo_ArrayInt[i] += MITTE;
             //Servo_ArrayInt[i] += Mitte_Array[i];
