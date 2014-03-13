@@ -188,6 +188,9 @@ void Master_Init(void)
    
    CMD_DDR |= (1 << ALARM_PIN); // Alarm
    
+   KANAL_DDR |= (1<<KANAL_PIN); // Kanal Ausgang
+   KANAL_PORT &= ~(1<<KANAL_PIN); // LO
+
    
    /**
 	 * Pin Change Interrupt enable on PCINT0 (PB6)
@@ -322,7 +325,7 @@ void timer1_init(void)
    
    //_delay_us(5);
    //#define FRAME_TIME 20 // msec
-   KANAL_DDR |= (1<<KANAL_PIN); // Kanal Ausgang
+   //KANAL_DDR |= (1<<KANAL_PIN); // Kanal Ausgang
 //   KANAL_PORT |= (1<<KANAL_PIN);
 
 //   DDRD |= (1<<PORTD5); //  Ausgang
@@ -347,7 +350,7 @@ void timer1_init(void)
    
    //KANAL_HI;
    KANAL_PORT |= (1<<KANAL_PIN);
-   OSZI_A_LO;
+  
    impulscounter = 0;
    
       if (Servo_ArrayInt[impulscounter] > SERVOMAX)
@@ -388,7 +391,7 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       // Start Impuls
       //KANAL_HI;
       KANAL_PORT |= (1<<KANAL_PIN);
-      OSZI_A_LO;
+      
       TCNT1  = 0;
       
       
@@ -458,7 +461,7 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
 {
    //KANAL_LO;
    KANAL_PORT &= ~(1<<KANAL_PIN);
-   OSZI_A_HI;
+   //OSZI_A_HI;
    if (impulscounter < ANZ_POT)
    {
       
@@ -520,7 +523,7 @@ ISR (TIMER2_OVF_vect) // 75 us
    if (timer2Counter >= 0x01FF) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
-      
+      OSZI_B_LO;
       //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
       {
          potstatus |= (1<<SPI_START); // Potentiometer messen
@@ -535,9 +538,10 @@ ISR (TIMER2_OVF_vect) // 75 us
          }
       }
 		timer2Counter = 0;
+      OSZI_B_HI ;
 	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
-   //OSZI_A_HI ;
+   
 }
 
 /*
@@ -856,14 +860,16 @@ int main (void)
             spiadc_init();
             // MARK: Pot lesen
             
+            if (mitte==0)
+            {
             mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte
-            
+            }
             
       
             for(i=0;i< ANZ_POT;i++)
             {
                
-               if ((i<4) )
+               if ((i<5) )
                {
                   
                   //POT_Array[i] = 0x600;
@@ -880,35 +886,29 @@ int main (void)
                   {
                      _delay_us(5);
                      adc_errcount++;
-                     masterstatus |= (1<<ADC_ALARM_BIT);
-                     POT_Array[i] = MITTE;
+¬                    // POT_Array[i] = MITTE;
                   }
                   sei();
-                  /*
-                  if (POT_Array[i]==0)
-                  {
-                     _delay_us(5);
-                     adc_errcount++;
-                     masterstatus |= (1<<ADC_ALARM_BIT);
-                     
-                     POT_Array[i] = 0x600;
-                     
-                  }
-                   */
-                  //POT_Array[i] = 0x600;
+                  
+                   //POT_Array[i] = 0x600;
                   // Filter
                   //POT_Array[i] = 3*POT_Array[i]/4 + (MCP3208_spiRead(SingleEnd,i)/4);
                   //POT_Array[i] = POT_FAKTOR*(1*POT_Array[i]/2 + (MCP3208_spiRead(SingleEnd,i)/2));
-                  _delay_us(50); // war mal 100
+                  _delay_us(10); // war mal 100
                   
                }
                else
                {
-                  POT_Array[i] = MITTE;
+                  OSZI_A_LO;
+                  POT_Array[i] = MCP3208_spiRead(SingleEnd,i);
+                  //POT_Array[i] = MITTE;
+                  OSZI_A_HI;
                }
                
             }
             anzeigecounter++;
+            
+
          }
          
          
@@ -940,7 +940,7 @@ int main (void)
          
          for(i=0;i< 8;i++)
          {
-            if ((i < 4) ) // 2 Steuerknueppel und 2 Schieber
+            if ((i < 6) ) // 2 Steuerknueppel und 2 Schieber
             {
                
                // Level fuer beide Seiten nach Settings
@@ -987,10 +987,6 @@ int main (void)
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
                }
-               
-               
-               
-               
                sei();
                if (i==0)
                {
@@ -999,10 +995,10 @@ int main (void)
             //    testdataarray[2] = Level_Array[i];
             //    testdataarray[3] = Expo_Array[i];
  
-                  testdataarray[0] = POT_Array[0] & 0x00FF;
-                  testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
-                  testdataarray[2] = POT_Array[1] & 0x00FF;
-                  testdataarray[3] = (POT_Array[1] & 0xFF00)>>8;
+            //      testdataarray[0] = POT_Array[0] & 0x00FF;
+            //      testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
+            //      testdataarray[2] = POT_Array[1] & 0x00FF;
+             //     testdataarray[3] = (POT_Array[1] & 0xFF00)>>8;
 
                   //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
                   //testdataarray[5] = (uint8_t)spieeprom_rdbyte(2*diff+1);
@@ -1064,6 +1060,12 @@ int main (void)
                   // end signed int
                
              }
+            else
+            {
+               Servo_ArrayInt[i] = POT_Array[i];
+            }
+            
+            
             
          }// for i
          //testdataarray[4] = abs(Servo_ArrayInt[0]) & 0x00FF;
@@ -1075,7 +1077,7 @@ int main (void)
          // Mix_Array 1: mixart
          
         
-         for (i=0;i<4;i++) // 50 us
+         for (i=0;i<6;i++) // 50 us
          {
             // Mixing lesen
             
@@ -1293,7 +1295,8 @@ int main (void)
                       RAM_CS_HI;
                       
                       task_counter++;
-                       
+                      
+                      /*
                       lcd_gotoxy(10,1);
                       lcd_putc('D');
                       lcd_puthex(task_in);
@@ -1302,6 +1305,7 @@ int main (void)
                       lcd_putc('c');
                       lcd_puthex(task_counter);
                       //lcd_putc('+');
+                       */
                       _delay_us(LOOPDELAY);
                       
                       // task_in im RAM zuruecksetzen
@@ -1407,26 +1411,22 @@ int main (void)
                         
                         if (pos==0)
                         {
-                         lcd_gotoxy(10,1);
-                         lcd_putc('A');
+                         //lcd_gotoxy(0,1);
+                         //lcd_putc('A');
                          //lcd_puthex(task_in);
                          //lcd_putc('d');
                          //lcd_puthex(task_indata);
-                         lcd_putc(' ');
+                         //lcd_putc(' ');
                         }
                         if (pos<2)
                         {
-                           lcd_gotoxy(12+pos,1);
-
-                           lcd_puthex(trimm);
-                           lcd_putc(' ');
-                          
+                           //lcd_putc(' ');
+                           //lcd_gotoxy(2+3*pos,1);
+                           //lcd_puthex(trimm);
+                           
                         }
                          _delay_us(LOOPDELAY);
-                        
-                        
-                        
-                        // task_in im RAM zuruecksetzen
+                         // task_in im RAM zuruecksetzen
  
                      }
                      RAM_CS_LO;
@@ -1448,7 +1448,7 @@ int main (void)
                      //     OSZI_B_HI;
                      RAM_CS_HI;
                      
-                     
+                     /*
                       lcd_gotoxy(10,1);
                       lcd_putc('T');
                       lcd_puthex(task_in);
@@ -1457,6 +1457,7 @@ int main (void)
                       lcd_putc('t');
                       lcd_puthex(trimm);
                       //lcd_putc('+');
+                      */
                       _delay_us(LOOPDELAY);
                      
                      

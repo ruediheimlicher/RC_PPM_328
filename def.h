@@ -16,6 +16,7 @@
 
 
 
+
 #define OSZI_A_LO OSZIPORT &= ~(1<<OSZI_PULS_A)
 #define OSZI_A_HI OSZIPORT |= (1<<OSZI_PULS_A)
 #define OSZI_A_TOGG OSZIPORT ^= (1<<OSZI_PULS_A)
