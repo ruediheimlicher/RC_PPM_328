@@ -523,7 +523,7 @@ ISR (TIMER2_OVF_vect) // 75 us
    if (timer2Counter >= 0x01FF) // Laenge des Impulspakets 20ms Atmega328
 //	if (timer2Counter >= 0x474) // Laenge des Impulspakets 20ms teenysy
 	{
-      OSZI_B_LO;
+      //OSZI_B_LO;
       //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
       {
          potstatus |= (1<<SPI_START); // Potentiometer messen
@@ -538,7 +538,7 @@ ISR (TIMER2_OVF_vect) // 75 us
          }
       }
 		timer2Counter = 0;
-      OSZI_B_HI ;
+      //OSZI_B_HI ;
 	}
 	TCNT2 = 10;							// ergibt 2 kHz fuer Timertakt
    
@@ -862,7 +862,11 @@ int main (void)
             
             if (mitte==0)
             {
-               mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte
+               mitte =MCP3208_spiRead(SingleEnd,7); // Kanal 7 lesen als Mitte der ADC-Messung, 0x2043
+               //lcd_gotoxy(0,1);
+               //lcd_puthex((mitte&0xFF00)>>8);
+               //lcd_puthex((mitte&0x00FF));
+               
             }
             
       
@@ -942,7 +946,7 @@ int main (void)
          {
             if ((i < ANZ_POT) ) // 2 Steuerknueppel und 2 Schieber
             {
-               
+               OSZI_B_LO ;
                // Level fuer beide Seiten nach Settings
                uint8_t levela = Level_Array[i]& 0x0F;
                uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
@@ -1058,7 +1062,7 @@ int main (void)
  // mit Vorzeichen
                   
                   // end signed int
-               
+               OSZI_B_HI ;
              }
             else
             {
@@ -1115,13 +1119,13 @@ int main (void)
          for (i=0;i<ANZ_POT-1;i++)
          {
             Servo_ArrayInt[i] += MITTE;
-            //Servo_ArrayInt[i] += Mitte_Array[i];
+            //Servo_ArrayInt[i] += mitte;
          }
          sei();
          
          
          {
- //          testdataarray[6] = Servo_ArrayInt[0] & 0x00FF;
+ //        testdataarray[6] = Servo_ArrayInt[0] & 0x00FF;
  //        testdataarray[7] = (Servo_ArrayInt[0] & 0xFF00)>>8;
             
          }
