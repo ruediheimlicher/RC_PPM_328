@@ -870,10 +870,10 @@ int main (void)
             }
             
       
-            for(i=0;i< ANZ_POT+1;i++)
+            for(i=0;i<= ANZ_IMPULSE;i++)
             {
                
-               if ((i<6) )
+               if ((i<ANZ_POT) )
                {
                   
                   //POT_Array[i] = 0x600;
@@ -942,7 +942,7 @@ int main (void)
          
          // MARK Servodaten aufbereiten
          
-         for(i=0;i< ANZ_IMPULSE;i++)
+         for(i=0;i<= ANZ_IMPULSE;i++)
          {
             if ((i < ANZ_POT) ) // 2 Steuerknueppel und 2 Schieber
             {
@@ -1004,8 +1004,8 @@ int main (void)
             //      testdataarray[2] = POT_Array[1] & 0x00FF;
              //     testdataarray[3] = (POT_Array[1] & 0xFF00)>>8;
 
-                  //testdataarray[4] = (uint8_t)spieeprom_rdbyte(2*diff);
-                  //testdataarray[5] = (uint8_t)spieeprom_rdbyte(2*diff+1);
+                  testdataarray[4] = POT_Array[5] & 0x00FF;
+                  testdataarray[5] = (POT_Array[5] & 0xFF00)>>8;
 
                   
                   
@@ -1058,15 +1058,23 @@ int main (void)
                   }
                
                    // Wert speichern, nachher in Mix weiter anpassen
+               if (i<4)
+               {
                Servo_ArrayInt[i] = diffdataInt + 4*Trimmung_Array[i];
+               }
+               else
+               {
+                  Servo_ArrayInt[i] = diffdataInt;
+               }
  // mit Vorzeichen
                   
                   // end signed int
                OSZI_B_HI ;
              }
-            else
+            else // > Anz Pot
             {
-               Servo_ArrayInt[i] = POT_Array[i];
+               Servo_ArrayInt[i] = POT_Array[i]/2;
+            
             }
             
             
@@ -1081,7 +1089,7 @@ int main (void)
          // Mix_Array 1: mixart
          
         
-         for (i=0;i<ANZ_POT;i++) // 50 us
+         for (i=0;i<4;i++) // 50 us
          {
             // Mixing lesen
             
@@ -1116,7 +1124,7 @@ int main (void)
          //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
-         for (i=0;i<ANZ_POT-1;i++)
+         for (i=0;i< (ANZ_POT-1);i++)
          {
             Servo_ArrayInt[i] += MITTE;
             //Servo_ArrayInt[i] += mitte;
