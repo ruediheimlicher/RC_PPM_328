@@ -301,6 +301,10 @@ void delay_ms(unsigned int ms)/* delay for a minimum of <ms> */
 	}
 }
 
+// -----------------------------------------------
+// Timer2 config: Grundtakt
+// -----------------------------------------------
+
 // http://www.co-pylit.org/courses/COSC2425/lectures/AVRNetworks/index.html
 
 void timer2_init(void)
@@ -316,11 +320,12 @@ void timer2_init(void)
 
 }
 
-
+// -----------------------------------------------
+// Timer1 starten: Impulspaket steuern
+// -----------------------------------------------
 
 void timer1_init(void)
 {
-   
    // Quelle http://www.mikrocontroller.net/topic/103629
    
    //_delay_us(5);
@@ -358,17 +363,16 @@ void timer1_init(void)
          Servo_ArrayInt[impulscounter] = SERVOMAX;
       }
       
-      if (Servo_ArrayInt[impulscounter] < SERVOMIN)
+      else if (Servo_ArrayInt[impulscounter] < SERVOMIN)
       {
          Servo_ArrayInt[impulscounter] = SERVOMIN;
       }
-      
-      
       OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
-      
- 
-
 } // end timer1
+
+// -----------------------------------------------
+// Timer1 nach Ende des Impulspakets beenden
+// -----------------------------------------------
 
 void timer1_stop(void)
 {
@@ -378,25 +382,23 @@ void timer1_stop(void)
 
 
 #pragma mark timer1 COMPA-vect
+// -----------------------------------------------
+// Kanalimpuls nach Potentiometerstellung neu starten
+// -----------------------------------------------
 
 ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
 {
-   
-   
    impulscounter++;
-   
-   if (impulscounter < ANZ_IMPULSE)
+   if (impulscounter <= ANZ_IMPULSE)
    {
-      
       // Start Impuls
       //KANAL_HI;
       KANAL_PORT |= (1<<KANAL_PIN);
-      
       TCNT1  = 0;
       
-      
-      // Laenge des naechsten Impuls setzen
-      
+      // -----------------------------------------------
+      // Laenge des naechsten Kanals setzen
+      // -----------------------------------------------
       /*
       uint16_t tempServoWert=Servo_ArrayInt[impulscounter];
       
@@ -411,9 +413,6 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       }
       OCR1A  = tempServoWert; // POT_Faktor schon nach ADC
    */
-      
-      
-      
          if (Servo_ArrayInt[impulscounter] > SERVOMAX)
          {
             Servo_ArrayInt[impulscounter] = SERVOMAX;
@@ -423,17 +422,13 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
          {
             Servo_ArrayInt[impulscounter] = SERVOMIN;
          }
-         OCR1A  = Servo_ArrayInt[impulscounter]; // POT_Faktor schon nach ADC
-      
-     
-      
+         OCR1A  = Servo_ArrayInt[impulscounter]; // Impulslaenge des naechsten Kanals
    }
    else
    {
       // Ende Impulspaket
-      //OCR1A  = 0x4FF;
-     // _delay_us(200);
-      //KANAL_LO;
+      
+      // KANAL_LO;
       KANAL_PORT &= ~(1<<KANAL_PIN);
 
       // Alle Impulse gesendet, Timer1 stop. Timer1 wird bei Beginn des naechsten Paketes wieder gestartet
@@ -443,26 +438,25 @@ ISR(TIMER1_COMPA_vect)	 //Ende der Pulslaenge fuer einen Kanal
       spi_end();
       potstatus |= (1<<SPI_END); //       
       
-      //MASTER_PORT &= ~(1<<MASTER_EN_PIN); // Master schickt Enable an Slave
       _delay_us(2);
       
-      MASTER_PORT |= (1<<MASTER_EN_PIN);
-      
+      MASTER_PORT |= (1<<MASTER_EN_PIN);// Master schickt Enable an Slave
    }
    
    //OSZI_B_LO ;
-   //_delay_us(10);
-   
-   
-}
+ }
 
 #pragma mark timer1 COMPB-vect
+// -----------------------------------------------
+// Kanalimpuls-Spike beenden
+// -----------------------------------------------
+
 ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
 {
    //KANAL_LO;
    KANAL_PORT &= ~(1<<KANAL_PIN);
    //OSZI_A_HI;
-   if (impulscounter <= ANZ_IMPULSE)
+   if (impulscounter <= ANZ_IMPULSE+1)
    {
       
    }
@@ -472,7 +466,7 @@ ISR(TIMER1_COMPB_vect)	 //Ende des Kanalimpuls. ca 0.3 ms
    }
 }
 
-
+/*
 void timer0 (void) // nicht verwendet
 {
 // Timer fuer Exp
@@ -488,6 +482,7 @@ void timer0 (void) // nicht verwendet
 	TCNT0 = TIMER0_STARTWERT;					//RŸcksetzen des Timers
    
 }
+*/
 
 /*
 void timer2 (uint8_t wert) 
@@ -515,6 +510,10 @@ void timer2 (uint8_t wert)
 volatile uint16_t timer2Counter=0;
 volatile uint16_t timer2BatterieCounter=0;
 #pragma mark timer2 OVF-vect
+
+// -----------------------------------------------
+// Kanalimpulspaket abschliessen 20ms
+ // -----------------------------------------------
 
 ISR (TIMER2_OVF_vect) // 75 us
 {
@@ -866,14 +865,11 @@ int main (void)
                //lcd_gotoxy(0,1);
                //lcd_puthex((mitte&0xFF00)>>8);
                //lcd_puthex((mitte&0x00FF));
-               
             }
-            
-      
-            for(i=0;i<= ANZ_IMPULSE;i++)
+             for(i=0;i<= ANZ_IMPULSE;i++)
             {
                
-               if ((i<ANZ_POT) )
+               if ((i<ANZ_POT))
                {
                   
                   //POT_Array[i] = 0x600;
@@ -999,13 +995,7 @@ int main (void)
             //    testdataarray[2] = Level_Array[i];
             //    testdataarray[3] = Expo_Array[i];
  
-            //      testdataarray[0] = POT_Array[0] & 0x00FF;
-            //      testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
-            //      testdataarray[2] = POT_Array[1] & 0x00FF;
-             //     testdataarray[3] = (POT_Array[1] & 0xFF00)>>8;
 
-                  testdataarray[4] = POT_Array[5] & 0x00FF;
-                  testdataarray[5] = (POT_Array[5] & 0xFF00)>>8;
 
                   
                   
@@ -1065,6 +1055,7 @@ int main (void)
                else
                {
                   Servo_ArrayInt[i] = diffdataInt;
+ 
                }
  // mit Vorzeichen
                   
@@ -1080,6 +1071,19 @@ int main (void)
             
             
          }// for i
+         
+         testdataarray[0] = POT_Array[0] & 0x00FF;
+         testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
+         
+         testdataarray[2] = POT_Array[5] & 0x00FF;
+         testdataarray[3] = (POT_Array[5] & 0xFF00)>>8;
+         
+         testdataarray[4] = POT_Array[6] & 0x00FF;
+         testdataarray[5] = (POT_Array[6] & 0xFF00)>>8;
+        
+         testdataarray[6] = POT_Array[7] & 0x00FF;
+         testdataarray[7] = (POT_Array[7] & 0xFF00)>>8;
+
          //testdataarray[4] = abs(Servo_ArrayInt[0]) & 0x00FF;
          //testdataarray[5] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
          
@@ -1225,10 +1229,6 @@ int main (void)
              lcd_putc('*');
              lcd_puthex(ram_errcount);
              
-             sendbuffer[3] = eeprom_testaddress;
-             sendbuffer[4] = eeprom_testdata;
-             //sendbuffer[12] = eeprom_testdata;
-             
              // end Daten an EEPROM
              }
              */
@@ -1274,8 +1274,13 @@ int main (void)
                      _delay_us(LOOPDELAY);
                      RAM_CS_HI;
                   
-                  writeRamByte(teststartadresse+i,testdataarray[i]);
+                  
                }
+               
+                for (i=0;i< 8;i++)
+                {
+                   writeRamByte(teststartadresse+i,testdataarray[i]);
+                }
                
                // Task lesen
                 task_in=0;
