@@ -1128,7 +1128,7 @@ int main (void)
          //testdataarray[7] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
 
          // Mitte addieren
-         for (i=0;i< (ANZ_POT-1);i++)
+         for (i=0;i< (ANZ_POT);i++)
          {
             Servo_ArrayInt[i] += MITTE;
             //Servo_ArrayInt[i] += mitte;
@@ -1279,20 +1279,23 @@ int main (void)
                
                 for (i=0;i< 8;i++)
                 {
-                   writeRamByte(teststartadresse+i,testdataarray[i]);
+                   //writeRamByte(teststartadresse+i,testdataarray[i]);
                 }
                lcd_gotoxy(0,1);
+               /*
                lcd_puthex(testdataarray[0]);
                lcd_puthex(testdataarray[1]);
                lcd_putc(' ');
+                
                lcd_puthex(testdataarray[2]);
                lcd_puthex(testdataarray[3]);
                lcd_putc(' ');
+               */
                lcd_puthex(testdataarray[4]);
                lcd_puthex(testdataarray[5]);
-               lcd_putc(' ');
-               lcd_puthex(testdataarray[6]);
-               lcd_puthex(testdataarray[7]);
+               //lcd_putc(' ');
+               //lcd_puthex(testdataarray[6]);
+               //lcd_puthex(testdataarray[7]);
 
                // Task lesen
                 task_in=0;
