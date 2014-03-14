@@ -868,7 +868,6 @@ int main (void)
             }
              for(i=0;i<= ANZ_IMPULSE;i++)
             {
-               
                if ((i<ANZ_POT))
                {
                   
@@ -897,17 +896,28 @@ int main (void)
                   _delay_us(10); // war mal 100
                   
                }
-               else
+               else if (i==6)
                {
                   OSZI_A_LO;
-                  POT_Array[i] = MCP3208_spiRead(SingleEnd,i);
+                  cli();
+                  uint16_t tempdata = MCP3208_spiRead(SingleEnd,i);
+                  POT_Array[i] = tempdata;
+                  //testdataarray[5] = tempdata & 0x00FF;
+                  //testdataarray[4] = (tempdata & 0xFF00)>>8;
+
+                  sei();
+                  //POT_Array[i] = MITTE;
                   //POT_Array[i] = MITTE;
                   OSZI_A_HI;
                }
                
+               
             }
+            
             anzeigecounter++;
             
+           // testdataarray[5] = POT_Array[6] & 0x00FF;
+           // testdataarray[4] = (POT_Array[6] & 0xFF00)>>8;
 
          }
          
@@ -970,9 +980,9 @@ int main (void)
                {
                   diff = adcdata - mitte;
                   
-                  diff *=4;
-                  diff /= 8;
-                 
+                  //diff *=4;
+                  //diff /= 8;
+                  diff /= 2;
                   
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
@@ -981,8 +991,9 @@ int main (void)
                {
                   diff = mitte - adcdata;
                   
-                  diff *=4;
-                  diff /= 8;
+                  //diff *=4;
+                  //diff /= 8;
+                  diff /= 2;
                   
                   diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
                   diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
@@ -1062,9 +1073,9 @@ int main (void)
                   // end signed int
                OSZI_B_HI ;
              }
-            else // > Anz Pot
+            else if (i==6) // > Anz Pot
             {
-               Servo_ArrayInt[i] = POT_Array[i]/2;
+               Servo_ArrayInt[i] = POT_Array[i];
             
             }
             
@@ -1072,20 +1083,20 @@ int main (void)
             
          }// for i
          
-         testdataarray[0] = POT_Array[4] & 0x00FF;
-         testdataarray[1] = (POT_Array[4] & 0xFF00)>>8;
+         //testdataarray[1] = POT_Array[4] & 0x00FF;
+         //testdataarray[0] = (POT_Array[4] & 0xFF00)>>8;
          
-         testdataarray[2] = POT_Array[5] & 0x00FF;
-         testdataarray[3] = (POT_Array[5] & 0xFF00)>>8;
+         //testdataarray[3] = POT_Array[5] & 0x00FF;
+         //testdataarray[2] = (POT_Array[5] & 0xFF00)>>8;
          
-         testdataarray[4] = POT_Array[6] & 0x00FF;
-         testdataarray[5] = (POT_Array[6] & 0xFF00)>>8;
+         //testdataarray[5] = POT_Array[6] & 0x00FF;
+         //testdataarray[4] = (POT_Array[6] & 0xFF00)>>8;
         
-         testdataarray[6] = POT_Array[7] & 0x00FF;
-         testdataarray[7] = (POT_Array[7] & 0xFF00)>>8;
+         //testdataarray[7] = POT_Array[7] & 0x00FF;
+         //testdataarray[6] = (POT_Array[7] & 0xFF00)>>8;
 
-         //testdataarray[4] = abs(Servo_ArrayInt[0]) & 0x00FF;
-         //testdataarray[5] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
+         //testdataarray[5] = abs(Servo_ArrayInt[0]) & 0x00FF;
+         //testdataarray[4] = (abs(Servo_ArrayInt[0]) & 0xFF00)>>8;
          
          // Servodaten mit Mix verarbeiten
          // Mix_Array 0: canals
@@ -1281,7 +1292,7 @@ int main (void)
                 {
                    //writeRamByte(teststartadresse+i,testdataarray[i]);
                 }
-               lcd_gotoxy(0,1);
+               //lcd_gotoxy(0,1);
                /*
                lcd_puthex(testdataarray[0]);
                lcd_puthex(testdataarray[1]);
@@ -1291,8 +1302,8 @@ int main (void)
                lcd_puthex(testdataarray[3]);
                lcd_putc(' ');
                */
-               lcd_puthex(testdataarray[4]);
-               lcd_puthex(testdataarray[5]);
+               //lcd_puthex(testdataarray[4]);
+               //lcd_puthex(testdataarray[5]);
                //lcd_putc(' ');
                //lcd_puthex(testdataarray[6]);
                //lcd_puthex(testdataarray[7]);
