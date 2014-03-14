@@ -1072,8 +1072,8 @@ int main (void)
             
          }// for i
          
-         testdataarray[0] = POT_Array[0] & 0x00FF;
-         testdataarray[1] = (POT_Array[0] & 0xFF00)>>8;
+         testdataarray[0] = POT_Array[4] & 0x00FF;
+         testdataarray[1] = (POT_Array[4] & 0xFF00)>>8;
          
          testdataarray[2] = POT_Array[5] & 0x00FF;
          testdataarray[3] = (POT_Array[5] & 0xFF00)>>8;
@@ -1281,7 +1281,19 @@ int main (void)
                 {
                    writeRamByte(teststartadresse+i,testdataarray[i]);
                 }
-               
+               lcd_gotoxy(0,1);
+               lcd_puthex(testdataarray[0]);
+               lcd_puthex(testdataarray[1]);
+               lcd_putc(' ');
+               lcd_puthex(testdataarray[2]);
+               lcd_puthex(testdataarray[3]);
+               lcd_putc(' ');
+               lcd_puthex(testdataarray[4]);
+               lcd_puthex(testdataarray[5]);
+               lcd_putc(' ');
+               lcd_puthex(testdataarray[6]);
+               lcd_puthex(testdataarray[7]);
+
                // Task lesen
                 task_in=0;
                _delay_us(2);
