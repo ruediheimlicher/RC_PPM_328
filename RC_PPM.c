@@ -841,7 +841,7 @@ int main (void)
       
       /**	Kanaele	***********************/
       
-      if (potstatus & (1<< SPI_START)) // SPI starten, in TIMER2_OVF_vect gesetzt
+      if ((potstatus & (1<< SPI_START)))// && (loopstatus & (1<<KANAL_BIT)) )// SPI starten, in TIMER2_OVF_vect gesetzt
       {
          masterstatus &= ~(1<< POT_READ);
          
@@ -1058,10 +1058,10 @@ int main (void)
                      //diffdataInt = -diffdataInt;
                   }
                
-                   // Wert speichern, nachher in Mix weiter anpassen
+               // Wert speichern, nachher in Mix weiter anpassen
                if (i<4)
                {
-               Servo_ArrayInt[i] = diffdataInt + 4*Trimmung_Array[i];
+               Servo_ArrayInt[i] = diffdataInt + 2*Trimmung_Array[i];
                }
                else
                {
@@ -1245,7 +1245,6 @@ int main (void)
              */
          } // EE_WRITE
          else
-            
          {
             //if (MASTER_PIN & (1<<SUB_BUSY_PIN))
             {
@@ -1332,6 +1331,7 @@ int main (void)
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_LO;
                       _delay_us(LOOPDELAY);
+                      task_indata=0;
                       task_indata = spiram_rdbyte(READ_TASKDATA);
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_HI;
@@ -1339,16 +1339,16 @@ int main (void)
                       
                       task_counter++;
                       
-                      /*
+                     
                       lcd_gotoxy(10,1);
                       lcd_putc('D');
-                      lcd_puthex(task_in);
+                      lcd_puthex(task_in & (1<<RAM_SEND_DOGM_TASK));
                       lcd_putc('d');
                       lcd_puthex(task_indata);
-                      lcd_putc('c');
-                      lcd_puthex(task_counter);
+                      //lcd_putc('c');
+                      //lcd_puthex(task_counter);
                       //lcd_putc('+');
-                       */
+                      
                       _delay_us(LOOPDELAY);
                       
                       // task_in im RAM zuruecksetzen
@@ -1357,7 +1357,7 @@ int main (void)
                       RAM_CS_HI;
                       
                       readSettings(task_indata);
-                      
+                       task_indata=0;
                       // Quittung an LCD
                       task_outdata = 0xBB;
                    }
@@ -1372,11 +1372,6 @@ int main (void)
                
                if ((task_in & (1<<RAM_RECV_LCD_TASK)) )//|| (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
                {
-                  
-                 if (task_in & (1<<RAM_RECV_LCD_TASK))
-                  {
-                    // loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
-                  }
                   eepromstatus &= ~(1<<EE_READ_SETTINGS);
                   task_counter++;
                   // Taskdaten lesen
@@ -1385,24 +1380,28 @@ int main (void)
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_LO;
                   _delay_us(LOOPDELAY);
+                   task_indata=0;
                   task_indata = spiram_rdbyte(READ_TASKDATA);
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_HI;
                   RAM_CS_HI;
                   
-                  /*
-                  lcd_gotoxy(10,0);
+                  
+                  lcd_gotoxy(0,0);
                   lcd_putc('T');
-                  lcd_puthex(task_in);
+                  lcd_puthex(task_in& (1<<RAM_RECV_LCD_TASK));
                   lcd_putc('d');
                   lcd_puthex(task_indata);
-                  lcd_putc('c');
-                  lcd_puthex(task_counter);
+                  //lcd_putc('c');
+                  //lcd_puthex(task_counter);
                   
-                  lcd_clr_line(1);
-                  */
-                  readSettings(task_indata);
+                  //lcd_clr_line(1);
                   
+                  
+                  //readSettings(task_indata);
+                   readSettings(0);
+                  
+                   task_indata=0;
                   // Quittung an LCD
                   task_outdata = 0xAA;
                   
@@ -1608,7 +1607,7 @@ int main (void)
                   testdata++;
                   testaddress = 0xF0;
                   
-               }
+               } // Fehler melden
                outcounter++;
                
                _delay_us(LOOPDELAY);

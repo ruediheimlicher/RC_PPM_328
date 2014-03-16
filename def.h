@@ -51,15 +51,31 @@
 
 #define STUFENOFFSET             0x800
 
-#define TASK_OFFSET              0x2000 // Ort fuer Einstellungen
+#define TASK_OFFSET              0x2000   // Ort fuer Einstellungen
 
-#define SETTINGBREITE            0x80; // Breite des Settingblocks fuer ein Device
+#define SETTINGBREITE            0x80;    // Breite des Settingblocks fuer ein Device
 
-#define MITTE_OFFSET             0x10
-#define EXPO_OFFSET              0x30
-#define LEVEL_OFFSET             0x20
-#define MIX_OFFSET               0x40
-#define  TRIMM_OFFSET            0x50 // 80
+#define  MITTE_OFFSET            0x10
+#define  EXPO_OFFSET             0x30
+#define  LEVEL_OFFSET             0x20
+#define  MIX_OFFSET               0x40
+#define  TRIMM_OFFSET            0x50  // 80
+
+// In LCD:
+/*
+ #define READ_TASKADRESSE         0x1FA     // RAM_Adresse fuer  Task-Auftrag von PPM an RC_LCD
+ #define READ_TASKDATA            0x1FB
+ 
+ #define WRITE_TASKADRESSE        0x1F0     // RAM_Adresse fuer Task-Auftrag von RC_LCD an PPM
+ #define WRITE_TASKDATA           0x1F1
+ 
+ #define RAM_SEND_PPM_TASK         2 // PPM soll Status lesen (Auftrag AN PPM) In PPM: RAM_RECV_LCD_TASK
+ #define RAM_RECV_PPM_TASK         1 // LCD soll Status lesen (Auftrag VON PPM) In PPM: RAM_SEND_LCD_TASK
+ 
+ #define RAM_SEND_DOGM_TASK         3
+ #define RAM_SEND_TRIMM_TASK        4
+
+ */
 
 #define READ_TASKADRESSE         0x1F0     // RAM_Adresse fuer  Task-Auftrag von RC_LCD
 #define READ_TASKDATA            0x1F1
@@ -72,7 +88,7 @@
 
 
 #define RAM_SEND_LCD_TASK         1 // LCD soll Task lesen (Auftrag AN LCD)
-#define RAM_RECV_LCD_TASK         2 // RAM soll Task lesen (Auftrag VON PPM)
+#define RAM_RECV_LCD_TASK         2 // RAM soll Task lesen (Auftrag VON LCD)
 
 // TRIMM_Tasks
 
