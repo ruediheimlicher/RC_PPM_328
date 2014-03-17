@@ -1398,12 +1398,12 @@ int main (void)
                   //lcd_clr_line(1);
                   
                   
-                  //readSettings(task_indata);
-                   readSettings(0);
+                  readSettings(task_indata);
+                  // readSettings(0);
                   
                    task_indata=0;
                   // Quittung an LCD
-                  task_outdata = 0xAA;
+                  task_outdata = 0x00;
                   
                   task_in &= ~(1<<RAM_RECV_LCD_TASK);
                   
@@ -1623,15 +1623,11 @@ int main (void)
                
                // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei langen VorgŠngen
                
-               if (loopstatus & (1<<KANAL_BIT))
+             //  if (loopstatus & (1<<KANAL_BIT))
                {
                   
                   timer1_init(); // Kanaele starten
                   
-               }
-               //   else
-               {
-                  //      abschnittnummer=0; // nach Master-Vorgang Position des Counters fuer PageWrite zuruecksetzen
                }
                
             } // if busy_pin
