@@ -684,6 +684,7 @@ int main (void)
     
 	_delay_ms(100);
 
+
 	sei();
 	
 	
@@ -868,6 +869,8 @@ int main (void)
             }
              for(i=0;i<= ANZ_IMPULSE;i++)
             {
+               //if (loopstatus & (1<<KANAL_BIT))
+               {
                if ((i<ANZ_POT))
                {
                   
@@ -910,7 +913,11 @@ int main (void)
                   //POT_Array[i] = MITTE;
                   OSZI_A_HI;
                }
-               
+               }//
+               //else
+               {
+                 // POT_Array[i] = mitte;
+               }
                
             }
             
@@ -950,83 +957,81 @@ int main (void)
          
          for(i=0;i<= ANZ_IMPULSE;i++)
          {
-            if ((i < ANZ_POT) ) // 2 Steuerknueppel und 2 Schieber
+            //
+            //if (loopstatus & (1<<KANAL_BIT))
             {
-               OSZI_B_LO ;
-               // Level fuer beide Seiten nach Settings
-               uint8_t levela = Level_Array[i]& 0x0F;
-               uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
-               
-               // Richting aus Settings
-               uint8_t richtung = Expo_Array[i] ; // bit 7
-               
-               // Expo-Stufe aus Settings
-               uint8_t stufea = Expo_Array[i] & 0x03;
-               uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
-               
-               // Mitte aus Settings
-               //mitte = Mitte_Array[i] + Trimmung_Array[i];
-               //mitte = MITTE;// + 2*Trimmung_Array[i];
-              
-               diff= mitte;
-               adcdata = POT_Array[i]; // gemessener Potwert
-
-               stufe = 0;
-               
-               // Wert fuer adcdata an Adresse in EEPROM lesen, 2 bytes
-               // diff: adcwert - mitte. Auf der einen Seite addieren, auf der anderen subtrahieren
-               cli();
-               if (adcdata > mitte) // Seite A
+               if ((i < ANZ_POT) ) // 2 Steuerknueppel und 2 Schieber
                {
-                  diff = adcdata - mitte;
+                  OSZI_B_LO ;
+                  // Level fuer beide Seiten nach Settings
+                  uint8_t levela = Level_Array[i]& 0x0F;
+                  uint8_t levelb = (Level_Array[i]& 0xF0)>>4;
                   
-                  //diff *=4;
-                  //diff /= 8;
-                  diff /= 2;
+                  // Richting aus Settings
+                  uint8_t richtung = Expo_Array[i] ; // bit 7
                   
-                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
-                  diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
-               }
-               else // Seite B
-               {
-                  diff = mitte - adcdata;
+                  // Expo-Stufe aus Settings
+                  uint8_t stufea = Expo_Array[i] & 0x03;
+                  uint8_t stufeb = (Expo_Array[i] & 0x30) >>4;
                   
-                  //diff *=4;
-                  //diff /= 8;
-                  diff /= 2;
+                  // Mitte aus Settings
+                  //mitte = Mitte_Array[i] + Trimmung_Array[i];
+                  //mitte = MITTE;// + 2*Trimmung_Array[i];
                   
-                  diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
-                  diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
-               }
-               sei();
-               if (i==0)
-               {
-            //    testdataarray[0] = adcdata & 0x00FF;
-            //    testdataarray[1] = (adcdata & 0xFF00)>>8;
-            //    testdataarray[2] = Level_Array[i];
-            //    testdataarray[3] = Expo_Array[i];
- 
-
-
+                  diff= mitte;
+                  adcdata = POT_Array[i]; // gemessener Potwert
                   
+                  stufe = 0;
                   
-               //testdataarray[2] = diffdatalo;
-               //testdataarray[3] = diffdatahi;
-              // testdataarray[4] = diff & 0x00FF;
-              // testdataarray[5] = (diff & 0xFF00)>>8;
-
-              //   testdataarray[4] = diffdatalo;
-              //   testdataarray[5] = diffdatahi;
-
-               }
-              
-               // MARK: Integerberechnungen
-               // start signed int
-               
+                  // Wert fuer adcdata an Adresse in EEPROM lesen, 2 bytes
+                  // diff: adcwert - mitte. Auf der einen Seite addieren, auf der anderen subtrahieren
+                  cli();
+                  if (adcdata > mitte) // Seite A
+                  {
+                     diff = adcdata - mitte;
+                     
+                     //diff *=4;
+                     //diff /= 8;
+                     diff /= 2;
+                     
+                     diffdatalo = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff);// Wert im EEPROM mit ADC-Data als Adresse
+                     diffdatahi = (uint8_t)spieeprom_rdbyte(stufea*STUFENOFFSET + 2*diff +1);
+                  }
+                  else // Seite B
+                  {
+                     diff = mitte - adcdata;
+                     
+                     //diff *=4;
+                     //diff /= 8;
+                     diff /= 2;
+                     
+                     diffdatalo = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff);
+                     diffdatahi = (uint8_t)spieeprom_rdbyte(stufeb*STUFENOFFSET + 2*diff +1);
+                  }
+                  sei();
+                  if (i==0)
+                  {
+                     //    testdataarray[0] = adcdata & 0x00FF;
+                     //    testdataarray[1] = (adcdata & 0xFF00)>>8;
+                     //    testdataarray[2] = Level_Array[i];
+                     //    testdataarray[3] = Expo_Array[i];
+                     //testdataarray[2] = diffdatalo;
+                     //testdataarray[3] = diffdatahi;
+                     // testdataarray[4] = diff & 0x00FF;
+                     // testdataarray[5] = (diff & 0xFF00)>>8;
+                     
+                     //   testdataarray[4] = diffdatalo;
+                     //   testdataarray[5] = diffdatahi;
+                     
+                  }
+                  
+                  // MARK: Integerberechnungen
+                  // start signed int
+                  
                   // 16bit-wert
-               
-               diffdataInt = diffdatalo | (diffdatahi <<8);
-               
+                  
+                  diffdataInt = diffdatalo | (diffdatahi <<8);
+                  
                   if (adcdata > mitte) // positiver Ausschlag, Teil A
                   {
                      //levela=0;
@@ -1043,41 +1048,43 @@ int main (void)
                      diffdataInt *= (-1);
                      //diffdataInt = -diffdataInt;
                   }
-               
-               //richtung=1;
-               if (i==0)
-               {
-
-              //  testdataarray[6] = abs(diffdataInt) & 0x00FF;
-              //  testdataarray[7] = (abs(diffdataInt) & 0xFF00)>>8;
-               }
-               
+                  
+                  //richtung=1;
+                  if (i==0)
+                  {
+                     
+                     //  testdataarray[6] = abs(diffdataInt) & 0x00FF;
+                     //  testdataarray[7] = (abs(diffdataInt) & 0xFF00)>>8;
+                  }
+                  
                   if (richtung ) // Richtung umkehren
                   {
                      diffdataInt *= (-1);
                      //diffdataInt = -diffdataInt;
                   }
-               
-               // Wert speichern, nachher in Mix weiter anpassen
-               if (i<4)
-               {
-               Servo_ArrayInt[i] = diffdataInt + 2*Trimmung_Array[i];
-               }
-               else
-               {
-                  Servo_ArrayInt[i] = diffdataInt;
- 
-               }
- // mit Vorzeichen
+                  
+                  // Wert speichern, nachher in Mix weiter anpassen
+                  if (i<4)
+                  {
+                     Servo_ArrayInt[i] = diffdataInt + 2*Trimmung_Array[i];
+                  }
+                  else
+                  {
+                     Servo_ArrayInt[i] = diffdataInt;
+                     
+                  }
+                  // mit Vorzeichen
                   
                   // end signed int
-               OSZI_B_HI ;
-             }
-            else if (i==6) // > Anz Pot
-            {
-               Servo_ArrayInt[i] = POT_Array[i];
-            
-            }
+                  OSZI_B_HI ;
+               }
+               else if (i==6) // > Anz Pot
+               {
+                  Servo_ArrayInt[i] = POT_Array[i];
+                  
+               }
+               
+            }//
             
             
             
@@ -1287,7 +1294,7 @@ int main (void)
                   
                }
                
-                for (i=0;i< 8;i++)
+                //for (i=0;i< 8;i++)
                 {
                    //writeRamByte(teststartadresse+i,testdataarray[i]);
                 }
@@ -1322,11 +1329,7 @@ int main (void)
                
                if (task_in & (1<<RAM_SEND_DOGM_TASK))
                    {
-                      //lcd_gotoxy(19,1);
-                     // lcd_putc('A'+(task_counter&0x03));
-
-                      task_in &= ~(1<<RAM_SEND_DOGM_TASK);
-                      
+                       task_in &= ~(1<<RAM_SEND_DOGM_TASK);
                       RAM_CS_LO;
                       _delay_us(LOOPDELAY);
                       //     OSZI_B_LO;
@@ -1338,13 +1341,14 @@ int main (void)
                       RAM_CS_HI;
                       
                       task_counter++;
+                      //lcd_gotoxy(10,0);
+                      //lcd_putc('D');
                       
-                     
-                      lcd_gotoxy(10,1);
-                      lcd_putc('D');
+                      /*
                       lcd_puthex(task_in & (1<<RAM_SEND_DOGM_TASK));
                       lcd_putc('d');
                       lcd_puthex(task_indata);
+                      */
                       //lcd_putc('c');
                       //lcd_puthex(task_counter);
                       //lcd_putc('+');
@@ -1370,12 +1374,13 @@ int main (void)
                }
                */
                
-               if ((task_in & (1<<RAM_RECV_LCD_TASK)) )//|| (eepromstatus & (1<<EE_READ_SETTINGS))) // Setting neu lesen
+               if ((task_in & (1<<RAM_RECV_LCD_TASK)))//||  // Setting neu lesen
                {
                   eepromstatus &= ~(1<<EE_READ_SETTINGS);
                   task_counter++;
                   // Taskdaten lesen
                   _delay_us(2);
+                  
                   RAM_CS_LO;
                   _delay_us(LOOPDELAY);
                   //     OSZI_B_LO;
@@ -1386,19 +1391,30 @@ int main (void)
                   //     OSZI_B_HI;
                   RAM_CS_HI;
                   
-                  
+                  /*
                   lcd_gotoxy(0,0);
                   lcd_putc('T');
+                  
                   lcd_puthex(task_in& (1<<RAM_RECV_LCD_TASK));
                   lcd_putc('d');
                   lcd_puthex(task_indata);
-                  //lcd_putc('c');
+                  */
+                     //lcd_putc('c');
                   //lcd_puthex(task_counter);
                   
                   //lcd_clr_line(1);
                   
-                  
-                  readSettings(task_indata);
+                  if (task_indata < 0xF0)
+                  {
+                     lcd_gotoxy(0,0);
+                     lcd_putc('$');
+                     readSettings(task_indata);
+                     loopstatus |= (1<<KANAL_BIT);
+                  }
+                  else
+                  {
+                     
+                  }
                   // readSettings(0);
                   
                    task_indata=0;
@@ -1413,7 +1429,7 @@ int main (void)
                   spiram_wrbyte(READ_TASKADRESSE, 0);
                   RAM_CS_HI;
                   
-                  loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
+               //   loopstatus |= (1<<KANAL_BIT);                // Nach Start Summensignal starten
                   
                }
                
@@ -1617,17 +1633,30 @@ int main (void)
                
                
                //spi_end();
+               
+               
    // MARK: timer1 Start
                // Berechnungen fertig, Timer1 fuer Summensignal starten
                sei();
                
                // if (MASTER_PIN ) // Master blockiert mit LO das Summensignal bei langen VorgŠngen
                
-             //  if (loopstatus & (1<<KANAL_BIT))
+               if (loopstatus & (1<<KANAL_BIT))
                {
                   
                   timer1_init(); // Kanaele starten
                   
+               }
+               else
+               {
+                  // SPI fuer device ausschalten
+                  spi_end();
+                  potstatus |= (1<<SPI_END); //
+                  
+                  _delay_us(2);
+                  
+                  MASTER_PORT |= (1<<MASTER_EN_PIN);// Master schickt Enable an Slave
+
                }
                
             } // if busy_pin
