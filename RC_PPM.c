@@ -607,7 +607,6 @@ void readSettings(uint8_t modelindex)
     {
        Level_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
        //Expo_Array[pos] = spieeprom_rdbyte(readstartadresse+pos);
-
     }
     
     // Expo lesen
@@ -1328,43 +1327,46 @@ int main (void)
  
                
                if (task_in & (1<<RAM_SEND_DOGM_TASK))
-                   {
-                       task_in &= ~(1<<RAM_SEND_DOGM_TASK);
-                      RAM_CS_LO;
-                      _delay_us(LOOPDELAY);
-                      //     OSZI_B_LO;
-                      _delay_us(LOOPDELAY);
-                      task_indata=0;
-                      task_indata = spiram_rdbyte(READ_TASKDATA);
-                      _delay_us(LOOPDELAY);
-                      //     OSZI_B_HI;
-                      RAM_CS_HI;
-                      
-                      task_counter++;
-                      //lcd_gotoxy(10,0);
-                      //lcd_putc('D');
-                      
-                      /*
-                      lcd_puthex(task_in & (1<<RAM_SEND_DOGM_TASK));
-                      lcd_putc('d');
-                      lcd_puthex(task_indata);
-                      */
-                      //lcd_putc('c');
-                      //lcd_puthex(task_counter);
-                      //lcd_putc('+');
-                      
-                      _delay_us(LOOPDELAY);
-                      
-                      // task_in im RAM zuruecksetzen
-                      RAM_CS_LO;
-                      spiram_wrbyte(READ_TASKADRESSE, 0);
-                      RAM_CS_HI;
-                      
-                      readSettings(task_indata);
-                       task_indata=0;
-                      // Quittung an LCD
-                      task_outdata = 0xBB;
-                   }
+               {
+                  task_in &= ~(1<<RAM_SEND_DOGM_TASK);
+                  RAM_CS_LO;
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_LO;
+                  _delay_us(LOOPDELAY);
+                  task_indata=0;
+                  task_indata = spiram_rdbyte(READ_TASKDATA);
+                  _delay_us(LOOPDELAY);
+                  //     OSZI_B_HI;
+                  RAM_CS_HI;
+                  
+                  task_counter++;
+                  lcd_gotoxy(10,0);
+                  lcd_putc(' ');
+
+                  lcd_gotoxy(10,0);
+                  lcd_putc('D');
+                  
+                  
+                   lcd_puthex(task_in & (1<<RAM_SEND_DOGM_TASK));
+                   lcd_putc('d');
+                   lcd_puthex(task_indata);
+                  
+                  lcd_putc('c');
+                  lcd_puthex(task_counter);
+                  lcd_putc('+');
+                  
+                  _delay_us(LOOPDELAY);
+                  
+                  // task_in im RAM zuruecksetzen
+                  RAM_CS_LO;
+                  spiram_wrbyte(READ_TASKADRESSE, 0);
+                  RAM_CS_HI;
+                  
+                  readSettings(task_indata);
+                  task_indata=0;
+                  // Quittung an LCD
+                  task_outdata = 0xBB;
+               }
                /*
                 // Kontrolle
                if (task_in & (1<<RAM_RECV_LCD_TASK))
@@ -1406,8 +1408,9 @@ int main (void)
                   
                   if (task_indata < 0xF0)
                   {
-                     lcd_gotoxy(0,0);
+                     lcd_gotoxy(18,1);
                      lcd_putc('$');
+                     lcd_putint1(task_counter);
                      readSettings(task_indata);
                      loopstatus |= (1<<KANAL_BIT);
                   }
